@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.log
+.DS_Store
+.claude/
+iceberg_precision_issue_draft.md

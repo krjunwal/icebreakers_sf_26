@@ -25,16 +25,23 @@ USE WAREHOUSE ABT_BUY_WH;
 USE DATABASE ABT_BUY;
 USE SCHEMA PUBLIC;
 
-SET UNDERCUT_GAP_THRESHOLD_PCT = 5.0;   -- Abt priced >5% above Buy -> consider undercutting
-SET RAISE_GAP_THRESHOLD_PCT = -5.0;     -- Abt priced >5% below Buy -> room to raise
-SET MIN_CONFIDENCE_FOR_ACTION = 0.70;   -- below this, don't recommend a pricing action at all
-
+-- NOTE: thresholds are hardcoded inside the procedure body below, not SET as
+-- session variables here. RECOMMEND_PRICE is a PERSISTED proc called later
+-- from a Streamlit session and from the agent's own execution warehouse
+-- session -- neither of those sessions would ever run the SET statements in
+-- this script, so $VAR references inside the proc body would silently
+-- resolve to NULL there (every IF/ELSEIF false -> always falls through to
+-- HOLD_COMPETITIVE). A SQL-scripting proc body must not depend on
+-- caller-session state it doesn't control.
 CREATE OR REPLACE PROCEDURE RECOMMEND_PRICE(P_ABT_ID NUMBER, P_BUY_ID NUMBER)
 RETURNS VARCHAR
 LANGUAGE SQL
 AS
 $$
 DECLARE
+  UNDERCUT_GAP_THRESHOLD_PCT FLOAT DEFAULT 5.0;   -- Abt priced >5% above Buy -> consider undercutting
+  RAISE_GAP_THRESHOLD_PCT FLOAT DEFAULT -5.0;     -- Abt priced >5% below Buy -> room to raise
+  MIN_CONFIDENCE_FOR_ACTION FLOAT DEFAULT 0.70;   -- below this, don't recommend a pricing action at all
   v_gap FLOAT;
   v_confidence FLOAT;
   v_abt_price FLOAT;
@@ -48,13 +55,13 @@ BEGIN
   FROM PRODUCT_MATCH_FACTS
   WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
 
-  IF (:v_confidence IS NULL OR :v_confidence < $MIN_CONFIDENCE_FOR_ACTION) THEN
+  IF (:v_confidence IS NULL OR :v_confidence < :MIN_CONFIDENCE_FOR_ACTION) THEN
     v_rule := 'INSUFFICIENT_CONFIDENCE';
   ELSEIF (:v_gap IS NULL) THEN
     v_rule := 'NO_PRICE_DATA';
-  ELSEIF (:v_gap > $UNDERCUT_GAP_THRESHOLD_PCT) THEN
+  ELSEIF (:v_gap > :UNDERCUT_GAP_THRESHOLD_PCT) THEN
     v_rule := 'CONSIDER_UNDERCUT';
-  ELSEIF (:v_gap < $RAISE_GAP_THRESHOLD_PCT) THEN
+  ELSEIF (:v_gap < :RAISE_GAP_THRESHOLD_PCT) THEN
     v_rule := 'ROOM_TO_RAISE';
   ELSE
     v_rule := 'HOLD_COMPETITIVE';
@@ -74,9 +81,11 @@ BEGIN
 END;
 $$;
 
+-- Both subqueries use the same ORDER BY so they resolve to the SAME row --
+-- see the equivalent note in 01_product_matching_agent.sql.
 CALL RECOMMEND_PRICE(
-  (SELECT abt_id FROM PRODUCT_MATCH_FACTS WHERE abt_vs_buy_pct_gap IS NOT NULL LIMIT 1),
-  (SELECT buy_id FROM PRODUCT_MATCH_FACTS WHERE abt_vs_buy_pct_gap IS NOT NULL LIMIT 1)
+  (SELECT abt_id FROM PRODUCT_MATCH_FACTS WHERE abt_vs_buy_pct_gap IS NOT NULL ORDER BY abt_id LIMIT 1),
+  (SELECT buy_id FROM PRODUCT_MATCH_FACTS WHERE abt_vs_buy_pct_gap IS NOT NULL ORDER BY abt_id LIMIT 1)
 );
 
 CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT

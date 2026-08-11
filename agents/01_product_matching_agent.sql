@@ -39,7 +39,7 @@ BEGIN
               || COALESCE(ms.embed_sim::VARCHAR, 'not computed')
               || ', structured attribute similarity: ' || COALESCE(ms.attr_sim::VARCHAR, 'not computed')
               || ', ensemble confidence: ' || COALESCE(ms.final_confidence::VARCHAR, 'not computed')
-              || ', current label: ' || COALESCE(ms.final_label, 'no resolved match record')
+              || ', current label: ' || COALESCE(ms.candidate_label, 'no resolved match record')
               || '.\nIn 2-3 plain-language sentences for a business user, explain why these two listings were judged to be the same product or not, referencing the specific signals above.'
   )
   INTO :result
@@ -52,10 +52,14 @@ BEGIN
 END;
 $$;
 
--- Smoke test the proc before wiring it into the agent spec.
+-- Smoke test the proc before wiring it into the agent spec. Both subqueries
+-- use the same deterministic ORDER BY so they resolve to the SAME row
+-- (abt_id is unique in MATCHED_PRODUCTS post-1:1-resolution) -- two
+-- independent unordered LIMIT 1 subqueries could otherwise land on
+-- different, unrelated pairs.
 CALL EXPLAIN_MATCH(
-  (SELECT abt_id FROM MATCHED_PRODUCTS LIMIT 1),
-  (SELECT buy_id FROM MATCHED_PRODUCTS LIMIT 1)
+  (SELECT abt_id FROM MATCHED_PRODUCTS ORDER BY abt_id LIMIT 1),
+  (SELECT buy_id FROM MATCHED_PRODUCTS ORDER BY abt_id LIMIT 1)
 );
 
 CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT

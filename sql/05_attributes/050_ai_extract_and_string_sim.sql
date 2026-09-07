@@ -44,18 +44,30 @@ FROM BUY_PRODUCTS;
 -- CONFIRMED shape (verified live against a real account, Sept 2026): responses are
 -- nested one level under "response", e.g. {"error": null, "response": {"brand": "Bose",
 -- "model_number": "AM53BK"}} -- NOT a flat top-level object. Path below reflects this.
+--
+-- CONFIRMED live bug (Sept 2026): despite the prompt saying "reply ... or empty if
+-- none is present", the model sometimes writes the literal word "NONE" (or similar
+-- placeholder text) instead of an actual empty string. A plain NULLIF(x, '') does
+-- NOT catch this -- two unrelated products both extracted as model_number='NONE'
+-- would then EDITDISTANCE-match as a *perfect* similarity (1.0), silently inflating
+-- attr_sim for pairs with zero real evidence. The CASE below normalizes known
+-- placeholder tokens to true NULL before they ever reach the similarity calc.
 CREATE OR REPLACE TABLE ABT_ATTRS_FLAT AS
 SELECT
   id,
-  UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand,
-  UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
+  CASE WHEN UPPER(TRIM(extracted:response:brand::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:brand::VARCHAR)) END AS brand,
+  CASE WHEN UPPER(TRIM(extracted:response:model_number::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:model_number::VARCHAR)) END AS model_number
 FROM ABT_ATTRS;
 
 CREATE OR REPLACE TABLE BUY_ATTRS_FLAT AS
 SELECT
   id,
-  UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand,
-  UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
+  CASE WHEN UPPER(TRIM(extracted:response:brand::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:brand::VARCHAR)) END AS brand,
+  CASE WHEN UPPER(TRIM(extracted:response:model_number::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:model_number::VARCHAR)) END AS model_number
 FROM BUY_ATTRS;
 
 -- ---------------------------------------------------------------------------

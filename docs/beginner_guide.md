@@ -1092,6 +1092,8 @@ Left sidebar → **AI & ML** → **Agents** (or **CoWork**, depending on your ac
 
 ## Part 8: MCP server
 
+**Confirmed live (Sept 2026):** MCP server tool types use a different, UPPERCASE enum than `CREATE AGENT`'s `tool_spec.type` (lowercase `cortex_analyst_text_to_sql`/`cortex_search` do NOT work here). Valid types: `CORTEX_SEARCH_SERVICE_QUERY`, `CORTEX_ANALYST_MESSAGE`, `SYSTEM_EXECUTE_SQL`, `CORTEX_AGENT_RUN`, `GENERIC`. Every tool also needs `title` and `description` fields — omitting them produces an unhelpful `"spec is invalid: null"` error with no indication of what's actually wrong. Cortex-object tools take one `identifier` (fully-qualified object name), not separate `semantic_view`/`search_service` keys. The block below already reflects all of this.
+
 ```sql
 USE ROLE ABT_BUY_ROLE; USE WAREHOUSE ABT_BUY_WH; USE DATABASE ABT_BUY; USE SCHEMA PUBLIC;
 
@@ -1099,15 +1101,20 @@ CREATE OR REPLACE MCP SERVER ABT_BUY_MCP_SERVER
   FROM SPECIFICATION
   $$
   tools:
-    - name: product_match_analyst
-      type: cortex_analyst_text_to_sql
-      semantic_view: ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW
-    - name: product_search
-      type: cortex_search
-      search_service: ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC
-    - name: read_only_sql
-      type: sql_execution
-      access_mode: read_only
+    - name: "product_match_analyst"
+      type: "CORTEX_ANALYST_MESSAGE"
+      title: "Product Match Analyst"
+      description: "Answers natural-language questions about matched products, pricing, and matching accuracy via the Abt-Buy semantic view."
+      identifier: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+    - name: "product_search"
+      type: "CORTEX_SEARCH_SERVICE_QUERY"
+      title: "Product Search"
+      description: "Hybrid vector+keyword search across both Abt and Buy product catalogs."
+      identifier: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC"
+    - name: "read_only_sql"
+      type: "SYSTEM_EXECUTE_SQL"
+      title: "Read-Only SQL Execution"
+      description: "Executes read-only SQL queries against the Abt-Buy database."
   $$;
 
 SHOW MCP SERVERS LIKE 'ABT_BUY_MCP_SERVER';

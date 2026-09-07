@@ -1216,11 +1216,11 @@ CREATE OR REPLACE STREAMLIT ABT_BUY.PUBLIC.ABT_BUY_DASHBOARD
 
 **Step 9.5 — Open it.** Snowsight → **Projects** → **Streamlit** → click **`ABT_BUY_DASHBOARD`**.
 
-**Expected result:** a working dashboard with 3 pages (Matching Accuracy / Competitive Pricing / Market Trends) in the sidebar navigation, plus 3 metric tiles on the landing page (confirmed matches / review queue / F1 score) matching your real measured numbers.
+**Expected result:** a single-page dashboard with a hero header (differentiator pills, 4 stat cards, a pipeline flow diagram) and three tabs (Matching Accuracy / Competitive Pricing / Market Trends) — deliberately built as tabs on one page, not separate sidebar pages, so a viewer never loses context switching between them.
 
 **Common error → fix:**
 - *"Insufficient privileges to operate on table/view X... owner role ACCOUNTADMIN must have SELECT granted"* → you skipped or need to re-run Step 9.1's grants (they need to cover every table/view the app queries, including ones added later — that's what the `FUTURE` grants are for).
-- *Streamlit pages don't show up* → confirm `streamlit/pages/` in your repo has the three numbered `.py` files, and `streamlit/environment.yml` lists `streamlit`, `pandas`, `snowflake-snowpark-python`.
+- *Tabs/charts don't show up* → confirm `streamlit/theme.py`, `tab_matching_accuracy.py`, `tab_competitive_pricing.py`, and `tab_market_trends.py` all exist alongside `streamlit_app.py`, and `streamlit/environment.yml` lists `streamlit`, `pandas`, `altair`, `snowflake-snowpark-python`.
 - *If you go the UI wizard route instead of this SQL path* and hit "Object '...' already exists" on a repeat attempt, that's almost always the git repository object from a previous attempt — don't recreate it, select the existing one from the file browser instead.
 
 **Prefer the UI instead?** It's Snowsight → **Projects** → **Streamlit** → **+ Streamlit** dropdown → **Create from repository** → connect GitHub → select the repo → pick `streamlit/streamlit_app.py` → choose database `ABT_BUY` / schema `PUBLIC` → **"Run on warehouse"** (not "Run on container") → warehouse `ABT_BUY_WH` → **Create**. Just expect to possibly hit the same privilege gaps covered in Step 9.1 along the way.
@@ -1272,7 +1272,7 @@ Open `docs/architecture.md` in this repo. It's already written (1-2 pages, as re
 - [ ] Real precision/recall/F1 numbers recorded and pasted into `architecture.md`.
 - [ ] All 3 agents visible and answering correctly in the chat UI.
 - [ ] MCP server created (`SHOW MCP SERVERS` confirms it).
-- [ ] Streamlit app deployed and working (3 pages).
+- [ ] Streamlit app deployed and working (one page, 3 tabs).
 - [ ] Code pushed to a public GitHub repo.
 - [ ] Demo video recorded (≤5 minutes, English narration) and uploaded per the hackathon's submission instructions.
 - [ ] `architecture.md` finalized (1-2 pages).

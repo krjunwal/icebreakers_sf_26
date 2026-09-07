@@ -10,9 +10,9 @@ Do a final line-by-line pass over this right before submission — check off eac
 | Cortex Agents — product matching agent, multi-strategy | `agents/01_product_matching_agent.sql` (`PRODUCT_MATCHING_AGENT`) | ☐ |
 | Cortex Agents — price optimization agent | `agents/02_price_optimization_agent.sql` (`PRICE_OPTIMIZATION_AGENT`) | ☐ |
 | Cortex Agents — market intelligence agent | `agents/03_market_intelligence_agent.sql` (`MARKET_INTELLIGENCE_AGENT`) | ☐ |
-| Snowflake Intelligence — competitive pricing dashboard | `streamlit/pages/2_competitive_pricing.py` + `PRICE_OPTIMIZATION_AGENT` surfaced in CoWork | ☐ |
-| Snowflake Intelligence — market trend analysis | `streamlit/pages/3_market_trends.py` + `MARKET_INTELLIGENCE_AGENT` surfaced in CoWork | ☐ |
-| Snowflake Intelligence — matching accuracy metrics | `streamlit/pages/1_matching_accuracy.py` + `V_MATCHING_ACCURACY` exposed via `ACCURACY_SUMMARY` in the semantic view | ☐ |
+| Snowflake Intelligence — competitive pricing dashboard | `streamlit/tab_competitive_pricing.py` (Competitive Pricing tab) + `PRICE_OPTIMIZATION_AGENT` surfaced in CoWork | ☐ |
+| Snowflake Intelligence — market trend analysis | `streamlit/tab_market_trends.py` (Market Trends tab) + `MARKET_INTELLIGENCE_AGENT` surfaced in CoWork | ☐ |
+| Snowflake Intelligence — matching accuracy metrics | `streamlit/tab_matching_accuracy.py` (Matching Accuracy tab) + `V_MATCHING_ACCURACY` exposed via `ACCURACY_SUMMARY` in the semantic view | ☐ |
 | MCP Integration | `mcp/mcp_server_spec.sql` (`ABT_BUY_MCP_SERVER`, GA managed object) | ☐ |
 
 ## Tech stack

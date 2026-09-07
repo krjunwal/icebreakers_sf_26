@@ -53,6 +53,22 @@ DIVERGING_NEG = "#2a78d6"  # blue
 DIVERGING_POS = "#e34948"  # red
 DIVERGING_MID = "#f0efec"
 
+# Plain-language display labels for the raw enum values stored in Snowflake --
+# charts/legends show these, SQL queries still use the real underlying values.
+CATEGORY_LABELS = {
+    "AUDIO": "Audio", "VIDEO_TV": "Video & TV", "CAMERA_PHOTO": "Camera & Photo",
+    "COMPUTER_ACCESSORIES": "Computer Accessories", "HOME_APPLIANCE": "Home Appliance",
+    "GAMING": "Gaming", "CAR_ELECTRONICS": "Car Electronics", "OTHER": "Other",
+}
+TREND_LABELS = {
+    "STABLE": "Stable prices", "VOLATILE": "Volatile prices",
+    "CONSISTENTLY_UNDERCUT": "One retailer stayed cheaper",
+    "CONSISTENTLY_PREMIUM": "One retailer stayed pricier",
+}
+OUTCOME_LABELS = {
+    "MATCH": "Confirmed match", "REVIEW": "Needs human review", "NO_MATCH": "Not a match",
+}
+
 SEQUENTIAL_BLUE = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 
 
@@ -164,6 +180,21 @@ def pipeline_flow(steps):
             parts.append(f'<span style="color:{INK_MUTED};padding:0 10px;font-size:1.1rem;">&rarr;</span>')
     st.markdown(f'<div style="display:flex;align-items:center;flex-wrap:wrap;">{"".join(parts)}</div>',
                 unsafe_allow_html=True)
+
+
+def donut_chart(df, label_col, value_col, color_domain, color_range, height=300):
+    """A simple, friendly proportion chart -- easier for a non-technical
+    viewer to read at a glance ('most of it is one color') than a bar chart,
+    at the cost of precise comparison (fine here since exact counts are also
+    shown in the tooltip and the accompanying table)."""
+    base = alt.Chart(df).encode(
+        theta=alt.Theta(f"{value_col}:Q", stack=True),
+        color=alt.Color(f"{label_col}:N",
+                         scale=alt.Scale(domain=color_domain, range=color_range),
+                         legend=alt.Legend(title=None, orient="right")),
+        tooltip=[label_col, value_col],
+    )
+    return base.mark_arc(innerRadius=70, outerRadius=130).properties(height=height, background=SURFACE)
 
 
 def altair_base(chart):

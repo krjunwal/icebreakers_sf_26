@@ -8,15 +8,27 @@ Market Trends.
 import streamlit as st
 from snowflake.snowpark.context import get_active_session
 
-from theme import inject_global_css, stat_card, status_for, ACCURACY_THRESHOLDS
+from theme import (
+    inject_global_css, stat_card, status_for, pill_row, pipeline_flow,
+    ACCURACY_THRESHOLDS, CATEGORICAL,
+)
 
 st.set_page_config(page_title="Abt-Buy Product Matching", layout="wide", page_icon="🔗")
 inject_global_css()
 
 session = get_active_session()
 
-st.title("AI-Powered Product Matching System")
+st.title("🔗 AI-Powered Product Matching System")
 st.caption("Snowflake Cortex hackathon demo — Abt-Buy cross-retailer entity resolution")
+
+pill_row([
+    ("🧬 4-signal ensemble, not one similarity score", CATEGORICAL["blue"]),
+    ("💰 Cost-gated LLM review", CATEGORICAL["orange"]),
+    ("🔍 Every match comes with a rationale", CATEGORICAL["aqua"]),
+    ("🧑‍⚖️ Human-in-the-loop review queue", CATEGORICAL["violet"]),
+])
+
+st.markdown("")
 
 total_matches = session.sql(
     "SELECT COUNT(*) AS n FROM MATCHED_PRODUCTS WHERE final_label = 'MATCH'"
@@ -26,29 +38,41 @@ review_count = session.sql(
 ).collect()[0]["N"]
 accuracy = session.sql("SELECT * FROM V_MATCHING_ACCURACY").collect()[0]
 
-f1 = accuracy["F1_SCORE"]
-label, color = status_for(f1, ACCURACY_THRESHOLDS)
+precision, f1 = accuracy["PRECISION"], accuracy["F1_SCORE"]
+f1_label, f1_color = status_for(f1, ACCURACY_THRESHOLDS)
+precision_label, precision_color = status_for(precision, ACCURACY_THRESHOLDS)
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     stat_card("Confirmed matches", f"{total_matches:,}", sub="final_label = 'MATCH'")
 with col2:
     stat_card("In human-review queue", f"{review_count:,}", sub="final_label = 'REVIEW'")
 with col3:
-    stat_card(
-        "Matching F1 score",
-        f"{f1:.1%}" if f1 is not None else "n/a",
-        status_label=label, status_color=color,
-    )
+    stat_card("Precision", f"{precision:.1%}" if precision is not None else "n/a",
+              status_label=precision_label, status_color=precision_color)
+with col4:
+    stat_card("Matching F1 score", f"{f1:.1%}" if f1 is not None else "n/a",
+              status_label=f1_label, status_color=f1_color)
+
+st.markdown("")
+st.markdown("##### How a match gets decided")
+pipeline_flow([
+    ("1. Blocking", CATEGORICAL["blue"]),
+    ("2. Embeddings", CATEGORICAL["orange"]),
+    ("3. Attributes", CATEGORICAL["aqua"]),
+    ("4. LLM adjudication", CATEGORICAL["magenta"]),
+    ("5. Ensemble score", CATEGORICAL["violet"]),
+])
+st.caption("Only the ambiguous middle band ever reaches the LLM step — most pairs are resolved cheaply by the first three signals.")
 
 st.markdown("")
 st.markdown(
     """
     **Use the pages in the sidebar:**
-    - **Matching Accuracy** — precision/recall/F1 against the labeled Abt-Buy ground truth,
+    - 🎯 **Matching Accuracy** — precision/recall/F1 against the labeled Abt-Buy ground truth,
       plus specific false-positive/false-negative examples with their ensemble rationale.
-    - **Competitive Pricing** — per-brand and per-pair price comparison, plus rule-based pricing recommendations.
-    - **Market Trends** — category- and brand-level pricing trend narratives.
+    - 💲 **Competitive Pricing** — per-brand and per-pair price comparison, plus rule-based pricing recommendations.
+    - 📈 **Market Trends** — category- and brand-level pricing trend narratives.
     """
 )
 

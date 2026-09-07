@@ -59,13 +59,20 @@ SELECT
   lp.as_of_date,
   tl.trend_label,
   pc.category,
+  -- Brand: reuse the AI_EXTRACT output from 05_attributes (already computed,
+  -- no new AI calls) rather than re-deriving it -- prefer Buy's extracted
+  -- brand (backed by a real manufacturer field 99.4% of the time) and fall
+  -- back to Abt's.
+  COALESCE(ba.brand, aa.brand) AS brand,
   TRUE AS is_synthetic_pricing
 FROM MATCHED_PRODUCTS mp
 JOIN ABT_PRODUCTS ap ON ap.id = mp.abt_id
 JOIN BUY_PRODUCTS bp ON bp.id = mp.buy_id
 LEFT JOIN V_LATEST_PRICES lp ON lp.abt_id = mp.abt_id AND lp.buy_id = mp.buy_id
 LEFT JOIN PRICE_TREND_LABELS tl ON tl.abt_id = mp.abt_id AND tl.buy_id = mp.buy_id
-LEFT JOIN PRODUCT_CATEGORIES pc ON pc.abt_id = mp.abt_id AND pc.buy_id = mp.buy_id;
+LEFT JOIN PRODUCT_CATEGORIES pc ON pc.abt_id = mp.abt_id AND pc.buy_id = mp.buy_id
+LEFT JOIN ABT_ATTRS_FLAT aa ON aa.id = mp.abt_id
+LEFT JOIN BUY_ATTRS_FLAT ba ON ba.id = mp.buy_id;
 
 -- Single-row accuracy snapshot so "what's our matching accuracy" is a plain
 -- text-to-SQL question, not something the agent has to re-derive.
@@ -87,7 +94,8 @@ CREATE OR REPLACE SEMANTIC VIEW ABT_BUY_SEMANTIC_VIEW
     product_match_facts.buy_name AS buy_name WITH SYNONYMS ('buy product', 'buy listing'),
     product_match_facts.final_label AS final_label WITH SYNONYMS ('match status'),
     product_match_facts.trend_label AS trend_label WITH SYNONYMS ('pricing trend', 'price pattern'),
-    product_match_facts.category AS category WITH SYNONYMS ('product category', 'market segment')
+    product_match_facts.category AS category WITH SYNONYMS ('product category', 'market segment'),
+    product_match_facts.brand AS brand WITH SYNONYMS ('manufacturer', 'brand name')
   )
   METRICS (
     product_match_facts.total_matches AS COUNT(*),

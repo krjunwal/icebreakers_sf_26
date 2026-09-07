@@ -89,7 +89,9 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
             buy_id: { type: string }
           required: [abt_id, buy_id]
   tool_resources:
-    MatchAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    MatchAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     ProductSearch: { search_service: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC", max_results: "5" }
     explain_match:
       type: "function"

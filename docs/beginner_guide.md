@@ -504,11 +504,16 @@ FROM CANDIDATE_PAIRS_ATTR;
 
 SELECT band, COUNT(*) FROM CANDIDATE_PAIRS_BANDED GROUP BY band ORDER BY band;
 
+-- CONFIRMED live bug (Sept 2026): without a NULL guard, ~34% of gray-zone
+-- pairs (6,930 of 20,414) came back with passed_gate = NULL instead of
+-- TRUE/FALSE -- string concatenation with a NULL description field yields
+-- a NULL prompt, so AI_FILTER had nothing to evaluate. COALESCE fixes it,
+-- same discipline as Steps 4.3/4.4.
 CREATE OR REPLACE TABLE GRAY_ZONE_GATED AS
 SELECT b.abt_id, b.buy_id,
   AI_FILTER(PROMPT(
     'Product A: {0} -- {1}\nProduct B: {2} -- {3}\nAre these two listings referring to the exact same retail product (allowing for differences in wording, but NOT different colors/sizes/models unless clearly the same SKU)?',
-    ap.name, ap.description, bp.name, bp.description
+    COALESCE(ap.name,''), COALESCE(ap.description,''), COALESCE(bp.name,''), COALESCE(bp.description,'')
   )) AS passed_gate
 FROM CANDIDATE_PAIRS_BANDED b
 JOIN ABT_PRODUCTS ap ON ap.id = b.abt_id
@@ -518,8 +523,8 @@ WHERE b.band = 'GRAY_ZONE';
 CREATE OR REPLACE TABLE GRAY_ZONE_ADJUDICATED AS
 SELECT g.abt_id, g.buy_id, AI_COMPLETE(
   model => 'mistral-large2',
-  prompt => 'Product A: ' || ap.name || ' -- ' || ap.description ||
-            '\nProduct B: ' || bp.name || ' -- ' || bp.description ||
+  prompt => 'Product A: ' || COALESCE(ap.name,'') || ' -- ' || COALESCE(ap.description,'') ||
+            '\nProduct B: ' || COALESCE(bp.name,'') || ' -- ' || COALESCE(bp.description,'') ||
             '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',
   response_format => { 'type': 'json', 'schema': { 'type': 'object', 'properties': {
     'is_match': {'type': 'boolean'}, 'llm_confidence': {'type': 'number'}, 'rationale': {'type': 'string'}
@@ -848,8 +853,8 @@ DECLARE
 BEGIN
   SELECT AI_COMPLETE(
     model => 'mistral-large2',
-    prompt => 'Product A (Abt): ' || ap.name || ' -- ' || ap.description ||
-              '\nProduct B (Buy): ' || bp.name || ' -- ' || bp.description ||
+    prompt => 'Product A (Abt): ' || COALESCE(ap.name,'') || ' -- ' || COALESCE(ap.description,'') ||
+              '\nProduct B (Buy): ' || COALESCE(bp.name,'') || ' -- ' || COALESCE(bp.description,'') ||
               '\nKnown similarity signals for this pair -- semantic embedding similarity: '
               || COALESCE(ms.embed_sim::VARCHAR, 'not computed')
               || ', structured attribute similarity: ' || COALESCE(ms.attr_sim::VARCHAR, 'not computed')

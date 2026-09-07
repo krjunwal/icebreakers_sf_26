@@ -58,6 +58,12 @@ SELECT band, COUNT(*) AS pair_count FROM CANDIDATE_PAIRS_BANDED GROUP BY band OR
 
 -- ---------------------------------------------------------------------------
 -- Gray-zone only: cheap AI_FILTER gate
+--
+-- CONFIRMED live bug (Sept 2026): passing ap.description/bp.description
+-- straight into PROMPT() without a NULL guard returned passed_gate = NULL
+-- (not TRUE/FALSE) for ~34% of gray-zone pairs (6,930 of 20,414) -- string
+-- concatenation with a NULL field yields a NULL prompt, so AI_FILTER had
+-- nothing to evaluate. Same COALESCE discipline as 040/050 fixes it.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE TABLE GRAY_ZONE_GATED AS
 SELECT
@@ -66,7 +72,7 @@ SELECT
   AI_FILTER(
     PROMPT(
       'Product A: {0} -- {1}\nProduct B: {2} -- {3}\nAre these two listings referring to the exact same retail product (allowing for differences in wording, but NOT different colors/sizes/models unless clearly the same SKU)?',
-      ap.name, ap.description, bp.name, bp.description
+      COALESCE(ap.name, ''), COALESCE(ap.description, ''), COALESCE(bp.name, ''), COALESCE(bp.description, '')
     )
   ) AS passed_gate
 FROM CANDIDATE_PAIRS_BANDED b
@@ -85,8 +91,8 @@ SELECT
   g.buy_id,
   AI_COMPLETE(
     model => 'mistral-large2',
-    prompt => 'Product A: ' || ap.name || ' -- ' || ap.description ||
-              '\nProduct B: ' || bp.name || ' -- ' || bp.description ||
+    prompt => 'Product A: ' || COALESCE(ap.name, '') || ' -- ' || COALESCE(ap.description, '') ||
+              '\nProduct B: ' || COALESCE(bp.name, '') || ' -- ' || COALESCE(bp.description, '') ||
               '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',
     response_format => {
       'type': 'json',

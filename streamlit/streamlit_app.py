@@ -1,8 +1,12 @@
 """
-Abt-Buy Product Matching hackathon demo -- Streamlit in Snowflake entry
-point. Actual content lives in pages/ (Streamlit's built-in multi-page nav
-picks those up automatically): Matching Accuracy, Competitive Pricing,
-Market Trends.
+Abt-Buy Product Matching hackathon demo -- Streamlit in Snowflake entry point.
+
+Everything lives on ONE page with tabs (Matching Accuracy / Competitive
+Pricing / Market Trends) rather than Streamlit's auto-discovered pages/
+sidebar navigation -- deliberately, so a viewer never has to click away and
+lose context. Each tab's content lives in its own module
+(tab_matching_accuracy.py, tab_competitive_pricing.py, tab_market_trends.py)
+purely for code organization; Streamlit does not treat them as separate pages.
 """
 
 import streamlit as st
@@ -12,6 +16,9 @@ from theme import (
     inject_global_css, stat_card, status_for, pill_row, pipeline_flow,
     ACCURACY_THRESHOLDS, CATEGORICAL,
 )
+import tab_matching_accuracy
+import tab_competitive_pricing
+import tab_market_trends
 
 st.set_page_config(page_title="Abt-Buy Product Matching", layout="wide", page_icon="🔗")
 inject_global_css()
@@ -57,27 +64,29 @@ with col4:
 st.markdown("")
 st.markdown("##### How a match gets decided")
 pipeline_flow([
-    ("1. Blocking", CATEGORICAL["blue"]),
-    ("2. Embeddings", CATEGORICAL["orange"]),
-    ("3. Attributes", CATEGORICAL["aqua"]),
-    ("4. LLM adjudication", CATEGORICAL["magenta"]),
-    ("5. Ensemble score", CATEGORICAL["violet"]),
+    ("1. Narrow down", CATEGORICAL["blue"]),
+    ("2. Compare meaning", CATEGORICAL["orange"]),
+    ("3. Compare specs", CATEGORICAL["aqua"]),
+    ("4. Ask AI (tricky cases)", CATEGORICAL["magenta"]),
+    ("5. Final decision", CATEGORICAL["violet"]),
 ])
-st.caption("Only the ambiguous middle band ever reaches the LLM step — most pairs are resolved cheaply by the first three signals.")
+st.caption("Only the genuinely ambiguous cases ever reach step 4 — most pairs are resolved cheaply by steps 1-3 alone.")
 
 st.markdown("")
-st.markdown(
-    """
-    **Use the pages in the sidebar:**
-    - 🎯 **Matching Accuracy** — precision/recall/F1 against the labeled Abt-Buy ground truth,
-      plus specific false-positive/false-negative examples with their ensemble rationale.
-    - 💲 **Competitive Pricing** — per-brand and per-pair price comparison, plus rule-based pricing recommendations.
-    - 📈 **Market Trends** — category- and brand-level pricing trend narratives.
-    """
-)
+tab1, tab2, tab3 = st.tabs(["🎯  Matching Accuracy", "💲  Competitive Pricing", "📈  Market Trends"])
 
-st.warning(
-    "⚠️ **Pricing and price-history figures throughout this app are synthetic/simulated** "
-    "(the Abt-Buy dataset has no real time-series pricing) — see `docs/architecture.md` for the "
+with tab1:
+    tab_matching_accuracy.render(session)
+
+with tab2:
+    tab_competitive_pricing.render(session)
+
+with tab3:
+    tab_market_trends.render(session)
+
+st.divider()
+st.caption(
+    "⚠️ Pricing and price-history figures throughout this app are synthetic/simulated "
+    "(the Abt-Buy dataset has no real time-series pricing) — see docs/architecture.md for the "
     "generation method. Product matching results are computed from the real dataset."
 )

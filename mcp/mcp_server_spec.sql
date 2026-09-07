@@ -8,10 +8,16 @@
 -- Do NOT use the old self-hosted `snowflake-labs-mcp` pip package -- it is
 -- deprecated in favor of this managed SQL object.
 --
--- DOC-VERIFY: CREATE MCP SERVER spec syntax and the REST endpoint path, at
--- build time. This object is newer than most of the others in this repo --
--- treat it as the second most likely (after CREATE AGENT) to need a syntax
--- fix once you actually run it.
+-- CONFIRMED live (Sept 2026), via docs.snowflake.com/en/sql-reference/sql/create-mcp-server:
+-- MCP server tool types use a different, UPPERCASE enum than CREATE AGENT's
+-- tool_spec.type (which uses lowercase "cortex_analyst_text_to_sql"/
+-- "cortex_search"). Valid MCP tool types: CORTEX_SEARCH_SERVICE_QUERY,
+-- CORTEX_ANALYST_MESSAGE, SYSTEM_EXECUTE_SQL, CORTEX_AGENT_RUN, GENERIC.
+-- Every tool ALSO requires "title" and "description" (not just name/type) --
+-- omitting them produces an unhelpful "spec is invalid: null" error with no
+-- indication of which field is missing. Cortex-object tools take a single
+-- "identifier" (fully-qualified object name), not "semantic_view"/
+-- "search_service" as separate keys.
 -- ============================================================================
 
 USE ROLE ABT_BUY_ROLE;
@@ -23,15 +29,20 @@ CREATE OR REPLACE MCP SERVER ABT_BUY_MCP_SERVER
   FROM SPECIFICATION
   $$
   tools:
-    - name: product_match_analyst
-      type: cortex_analyst_text_to_sql
-      semantic_view: ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW
-    - name: product_search
-      type: cortex_search
-      search_service: ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC
-    - name: read_only_sql
-      type: sql_execution
-      access_mode: read_only
+    - name: "product_match_analyst"
+      type: "CORTEX_ANALYST_MESSAGE"
+      title: "Product Match Analyst"
+      description: "Answers natural-language questions about matched products, pricing, and matching accuracy via the Abt-Buy semantic view."
+      identifier: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+    - name: "product_search"
+      type: "CORTEX_SEARCH_SERVICE_QUERY"
+      title: "Product Search"
+      description: "Hybrid vector+keyword search across both Abt and Buy product catalogs."
+      identifier: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC"
+    - name: "read_only_sql"
+      type: "SYSTEM_EXECUTE_SQL"
+      title: "Read-Only SQL Execution"
+      description: "Executes read-only SQL queries against the Abt-Buy database."
   $$;
 
 -- After creation, the server is reachable at:

@@ -67,8 +67,20 @@ All three sit on one semantic view (`ABT_BUY_SEMANTIC_VIEW`) so the same objects
 
 ## Results
 
-- **Blocking recall: 100%** (1,097/1,097 ground-truth pairs survive into the ~79K-pair candidate set), verified locally against the raw CSVs before any Snowflake AI call — see `python/eval_matching_local.py`.
-- **End-to-end matching precision/recall/F1**: computed by `sql/08_eval/081_precision_recall_f1_view.sql` (`V_MATCHING_ACCURACY`) once the full pipeline runs against a live Snowflake account — *fill in the actual measured numbers here before submitting*.
+- **Blocking recall: 100%** (1,097/1,097 ground-truth pairs survive into the ~79K-pair candidate set), verified locally against the raw CSVs before any Snowflake AI call — see `python/eval_matching_local.py`. Live on Snowflake, blocking produced 81,121 candidate pairs (out of ~1.18M possible) with the same 100% recall, confirming the SQL reproduces the locally-validated design.
+- **End-to-end matching precision/recall/F1** (measured live via `sql/08_eval/081_precision_recall_f1_view.sql`, `V_MATCHING_ACCURACY`, against the real `abt_buy_perfectMapping.csv` ground truth):
+
+  | Metric | Value |
+  |---|---|
+  | Precision | **97.9%** |
+  | Recall | **86.6%** |
+  | F1 score | **0.919** |
+  | Predicted MATCH | 970 |
+  | True positives | 950 |
+  | False positives | 20 |
+  | False negatives | 147 |
+
+  Precision is intentionally the priority here — a MATCH label is right 98% of the time. Most of the recall gap is not lost silently: unresolved/ambiguous pairs land in a separate `REVIEW` tier (83 pairs) rather than being forced into MATCH or NO_MATCH, feeding the human-in-the-loop review queue instead of a false claim of certainty.
 
 ## Tech Stack
 

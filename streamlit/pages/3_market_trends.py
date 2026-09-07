@@ -18,9 +18,18 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Pricing pattern distribution")
     trend_counts = session.sql(
-        "SELECT trend_label, COUNT(*) AS pair_count FROM PRODUCT_MATCH_FACTS WHERE final_label = 'MATCH' GROUP BY trend_label"
+        "SELECT trend_label, COUNT(*) AS pair_count FROM PRODUCT_MATCH_FACTS "
+        "WHERE final_label = 'MATCH' AND trend_label IS NOT NULL GROUP BY trend_label"
     ).to_pandas()
     st.bar_chart(trend_counts.set_index("TREND_LABEL"))
+    no_pricing = session.sql(
+        "SELECT COUNT(*) AS n FROM PRODUCT_MATCH_FACTS WHERE final_label = 'MATCH' AND trend_label IS NULL"
+    ).collect()[0]["N"]
+    if no_pricing:
+        st.caption(
+            f"{no_pricing} matched pair(s) excluded from this chart -- synthetic pricing was only "
+            "generated for the labeled ground-truth pairs, not every pair the ensemble predicted."
+        )
 
 with col2:
     st.subheader("Matches by category")

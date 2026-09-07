@@ -937,7 +937,9 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
           properties: { abt_id: { type: string }, buy_id: { type: string } }
           required: [abt_id, buy_id]
   tool_resources:
-    MatchAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    MatchAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     ProductSearch: { search_service: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC", max_results: "5" }
     explain_match:
       type: "function"
@@ -1015,7 +1017,9 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
           properties: { abt_id: { type: string }, buy_id: { type: string } }
           required: [abt_id, buy_id]
   tool_resources:
-    PricingAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    PricingAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     recommend_price:
       type: "function"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
@@ -1067,7 +1071,9 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
           type: object
           properties: { category: { type: string } }
   tool_resources:
-    MarketAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    MarketAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     market_trend_summary:
       type: "function"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }

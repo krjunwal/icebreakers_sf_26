@@ -68,7 +68,9 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
           properties:
             category: { type: string }
   tool_resources:
-    MarketAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    MarketAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     market_trend_summary:
       type: "function"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }

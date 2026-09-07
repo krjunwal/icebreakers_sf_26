@@ -112,7 +112,9 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
             buy_id: { type: string }
           required: [abt_id, buy_id]
   tool_resources:
-    PricingAnalyst: { semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW" }
+    PricingAnalyst:
+      semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
+      execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     recommend_price:
       type: "function"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }

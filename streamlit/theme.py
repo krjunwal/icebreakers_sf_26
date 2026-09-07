@@ -9,6 +9,8 @@ order + status/diverging pairs are chosen so adjacent colors stay
 distinguishable under color-vision deficiency, not just to "look nice").
 """
 
+import textwrap
+
 import altair as alt
 import streamlit as st
 
@@ -55,8 +57,11 @@ SEQUENTIAL_BLUE = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f
 
 
 def inject_global_css():
-    st.markdown(
-        f"""
+    # textwrap.dedent strips the common leading indentation -- without it,
+    # Markdown treats 4+ leading spaces as a code block and renders parts of
+    # this as literal text instead of applying it as CSS (same class of bug
+    # fixed in stat_card()).
+    css = textwrap.dedent(f"""\
         <style>
         .stApp {{ background-color: {PAGE}; }}
         [data-testid="stMetricValue"] {{ font-variant-numeric: tabular-nums; }}
@@ -96,9 +101,8 @@ def inject_global_css():
             color: white;
         }}
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """)
+    st.markdown(css, unsafe_allow_html=True)
 
 
 def status_for(value, thresholds):
@@ -118,22 +122,19 @@ ACCURACY_THRESHOLDS = [
 
 
 def stat_card(label, value, sub=None, status_label=None, status_color=None):
+    # Built as ONE line, deliberately -- Markdown treats 4+ spaces of leading
+    # indentation as a code block, so an indented multi-line f-string here
+    # gets partially rendered as literal text instead of parsed as HTML.
     badge_html = (
         f'<div class="status-badge" style="background:{status_color}">{status_label}</div>'
         if status_label else ""
     )
     sub_html = f'<div class="stat-sub">{sub}</div>' if sub else ""
-    st.markdown(
-        f"""
-        <div class="stat-card">
-            <div class="stat-label">{label}</div>
-            <div class="stat-value">{value}</div>
-            {sub_html}
-            {badge_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
+    html = (
+        f'<div class="stat-card"><div class="stat-label">{label}</div>'
+        f'<div class="stat-value">{value}</div>{sub_html}{badge_html}</div>'
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def altair_base(chart):

@@ -137,6 +137,35 @@ def stat_card(label, value, sub=None, status_label=None, status_color=None):
     st.markdown(html, unsafe_allow_html=True)
 
 
+def pill_row(items):
+    """items: list of (text, hex_color). Renders a horizontal row of rounded
+    color pills -- e.g. for a 'why this is different' callout or a pipeline
+    step flow. Built on one line per pill, same indentation-bug avoidance as
+    stat_card()."""
+    pills = "".join(
+        f'<span style="display:inline-block;background:{color}1a;color:{color};'
+        f'border:1px solid {color}55;border-radius:999px;padding:5px 14px;'
+        f'margin:0 8px 8px 0;font-size:0.85rem;font-weight:600;">{text}</span>'
+        for text, color in items
+    )
+    st.markdown(f'<div>{pills}</div>', unsafe_allow_html=True)
+
+
+def pipeline_flow(steps):
+    """steps: list of (text, hex_color). Renders a left-to-right flow of
+    colored steps connected by arrows, e.g. Blocking -> Embeddings -> ...."""
+    parts = []
+    for i, (text, color) in enumerate(steps):
+        parts.append(
+            f'<span style="display:inline-block;background:{color};color:white;'
+            f'border-radius:8px;padding:8px 16px;font-size:0.85rem;font-weight:600;">{text}</span>'
+        )
+        if i < len(steps) - 1:
+            parts.append(f'<span style="color:{INK_MUTED};padding:0 10px;font-size:1.1rem;">&rarr;</span>')
+    st.markdown(f'<div style="display:flex;align-items:center;flex-wrap:wrap;">{"".join(parts)}</div>',
+                unsafe_allow_html=True)
+
+
 def altair_base(chart):
     """Shared chart chrome: recessive gridlines/axes, no border, our ink tokens."""
     return (

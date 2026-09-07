@@ -33,8 +33,8 @@ DECLARE
 BEGIN
   SELECT AI_COMPLETE(
     model => 'mistral-large2',
-    prompt => 'Product A (Abt): ' || ap.name || ' -- ' || ap.description ||
-              '\nProduct B (Buy): ' || bp.name || ' -- ' || bp.description ||
+    prompt => 'Product A (Abt): ' || COALESCE(ap.name, '') || ' -- ' || COALESCE(ap.description, '') ||
+              '\nProduct B (Buy): ' || COALESCE(bp.name, '') || ' -- ' || COALESCE(bp.description, '') ||
               '\nKnown similarity signals for this pair -- semantic embedding similarity: '
               || COALESCE(ms.embed_sim::VARCHAR, 'not computed')
               || ', structured attribute similarity: ' || COALESCE(ms.attr_sim::VARCHAR, 'not computed')

@@ -118,6 +118,37 @@ JOIN ABT_PRODUCTS ap ON ap.id = g.abt_id
 JOIN BUY_PRODUCTS bp ON bp.id = g.buy_id
 WHERE g.passed_gate = TRUE;
 
+-- CONFIRMED live (Sept 2026): AI_COMPLETE returned a NULL verdict (no usable
+-- structured response) for ~11.5% of gray-zone pairs that passed the gate
+-- (122 of 1061 in the reference run) -- not traceable to any single text
+-- pattern in the inputs checked, just an occasional real characteristic of
+-- calling LLMs at scale. A cheap retry on just the null subset recovers
+-- most of them.
+UPDATE GRAY_ZONE_ADJUDICATED t
+SET verdict = retry.new_verdict
+FROM (
+  SELECT gza.abt_id, gza.buy_id, AI_COMPLETE(
+    model => 'claude-sonnet-5',
+    prompt => 'Product A: ' || COALESCE(ap.name, '') || ' -- ' || COALESCE(ap.description, '') ||
+              '\nProduct B: ' || COALESCE(bp.name, '') || ' -- ' || COALESCE(bp.description, '') ||
+              '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',
+    response_format => {
+      'type': 'json',
+      'schema': { 'type': 'object', 'properties': {
+        'is_match': {'type': 'boolean'}, 'llm_confidence': {'type': 'number'}, 'rationale': {'type': 'string'}
+      }, 'required': ['is_match', 'llm_confidence', 'rationale'] } }
+  ) AS new_verdict
+  FROM GRAY_ZONE_ADJUDICATED gza
+  JOIN ABT_PRODUCTS ap ON ap.id = gza.abt_id
+  JOIN BUY_PRODUCTS bp ON bp.id = gza.buy_id
+  WHERE gza.verdict IS NULL
+) retry
+WHERE t.abt_id = retry.abt_id AND t.buy_id = retry.buy_id AND t.verdict IS NULL;
+
+-- Any still NULL after the retry get an explicit, honest explanation in
+-- 070_final_match_scores.sql (not silently mislabeled as "no LLM review needed").
+SELECT COUNT(*) AS still_null_after_retry FROM GRAY_ZONE_ADJUDICATED WHERE verdict IS NULL;
+
 -- ---------------------------------------------------------------------------
 -- Merge back onto the full candidate set. Pairs that never went to the LLM
 -- (AUTO_ACCEPT/AUTO_REJECT, or GRAY_ZONE-but-failed-the-gate) get NULL

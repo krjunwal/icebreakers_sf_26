@@ -436,16 +436,16 @@ FROM BUY_PRODUCTS;
 ```sql
 SELECT extracted FROM ABT_ATTRS LIMIT 5;
 ```
-It should look like `{"brand": "Sony", "model_number": "PSLX350H"}`. If it's nested differently (e.g. `{"response": {...}}`), tell me and we'll adjust the next block's `:brand`/`:model_number` paths.
+**Confirmed live (Sept 2026):** the real shape is nested one level under `response`, e.g. `{"error": null, "response": {"brand": "Bose", "model_number": "AM53BK"}}` — NOT a flat top-level object. The block below already reflects this.
 
 Then continue:
 ```sql
 CREATE OR REPLACE TABLE ABT_ATTRS_FLAT AS
-SELECT id, UPPER(TRIM(extracted:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:model_number::VARCHAR)) AS model_number
+SELECT id, UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
 FROM ABT_ATTRS;
 
 CREATE OR REPLACE TABLE BUY_ATTRS_FLAT AS
-SELECT id, UPPER(TRIM(extracted:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:model_number::VARCHAR)) AS model_number
+SELECT id, UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
 FROM BUY_ATTRS;
 
 CREATE OR REPLACE TABLE CANDIDATE_PAIRS_ATTR AS

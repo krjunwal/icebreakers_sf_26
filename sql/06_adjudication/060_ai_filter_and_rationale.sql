@@ -12,6 +12,12 @@
 -- fast default model with no explicit model= param, per the function's
 -- documented "usable directly in WHERE/JOIN" contract) and AI_COMPLETE's
 -- response_format JSON schema shape, at build time.
+--
+-- CONFIRMED live (Sept 2026): 'mistral-large2' (and claude-4-sonnet,
+-- openai-gpt-4.1, snowflake-llama-3.3-70b) all errored as "legacy state,
+-- please use other models." Model names churn fast on Cortex -- 'model
+-- => claude-sonnet-5' below was confirmed working live; re-verify with a
+-- trivial AI_COMPLETE call before trusting it if it's been a while.
 -- ============================================================================
 
 USE ROLE ABT_BUY_ROLE;
@@ -90,7 +96,7 @@ SELECT
   g.abt_id,
   g.buy_id,
   AI_COMPLETE(
-    model => 'mistral-large2',
+    model => 'claude-sonnet-5',
     prompt => 'Product A: ' || COALESCE(ap.name, '') || ' -- ' || COALESCE(ap.description, '') ||
               '\nProduct B: ' || COALESCE(bp.name, '') || ' -- ' || COALESCE(bp.description, '') ||
               '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',

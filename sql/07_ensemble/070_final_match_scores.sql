@@ -58,6 +58,13 @@ WITH scored AS (
       -- Tier 2: gray zone, but the cheap AI_FILTER gate said "not a match" --
       -- honor that signal with a real discount rather than ignoring it.
       WHEN band = 'GRAY_ZONE' AND passed_gate = FALSE THEN pre_score * 0.5
+      -- Tier 2b: gray zone, passed the gate, but AI_COMPLETE still didn't
+      -- return a usable verdict even after a retry pass (~11% of gray-zone
+      -- pairs hit this the first time; retrying recovers most of them --
+      -- see 060's UPDATE ... retry step). Same safe fallback as Tier 3, but
+      -- flagged separately so the explanation text below doesn't lie about
+      -- what happened.
+      WHEN band = 'GRAY_ZONE' AND passed_gate = TRUE AND llm_confidence IS NULL THEN pre_score
       -- Tier 3: AUTO_ACCEPT / AUTO_REJECT -- no LLM step was needed either way.
       ELSE pre_score
     END AS final_confidence,
@@ -68,6 +75,9 @@ WITH scored AS (
       WHEN band = 'GRAY_ZONE' AND passed_gate = FALSE THEN
         'embed=' || ROUND(embed_sim, 3) || ' attr=' || ROUND(COALESCE(attr_sim, 0), 3)
           || ' -- fast filter gate said not-a-match, no full LLM review run'
+      WHEN band = 'GRAY_ZONE' AND passed_gate = TRUE AND llm_confidence IS NULL THEN
+        'embed=' || ROUND(embed_sim, 3) || ' attr=' || ROUND(COALESCE(attr_sim, 0), 3)
+          || ' -- LLM review was attempted (passed the fast gate) but did not return a usable verdict, even after retry; falling back to embedding+attribute score only'
       ELSE
         'embed=' || ROUND(embed_sim, 3) || ' attr=' || ROUND(COALESCE(attr_sim, 0), 3)
           || ' -- ' || band || ', no LLM review needed'

@@ -540,6 +540,31 @@ JOIN ABT_PRODUCTS ap ON ap.id = g.abt_id
 JOIN BUY_PRODUCTS bp ON bp.id = g.buy_id
 WHERE g.passed_gate = TRUE;
 
+-- CONFIRMED live (Sept 2026): AI_COMPLETE returned a NULL verdict (no usable
+-- structured response) for ~11.5% of gray-zone pairs that passed the gate --
+-- not traceable to any single text pattern, just an occasional real
+-- characteristic of calling LLMs at scale. A cheap retry recovers most of them.
+UPDATE GRAY_ZONE_ADJUDICATED t
+SET verdict = retry.new_verdict
+FROM (
+  SELECT gza.abt_id, gza.buy_id, AI_COMPLETE(
+    model => 'claude-sonnet-5',
+    prompt => 'Product A: ' || COALESCE(ap.name,'') || ' -- ' || COALESCE(ap.description,'') ||
+              '\nProduct B: ' || COALESCE(bp.name,'') || ' -- ' || COALESCE(bp.description,'') ||
+              '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',
+    response_format => { 'type': 'json', 'schema': { 'type': 'object', 'properties': {
+      'is_match': {'type': 'boolean'}, 'llm_confidence': {'type': 'number'}, 'rationale': {'type': 'string'}
+    }, 'required': ['is_match', 'llm_confidence', 'rationale'] } }
+  ) AS new_verdict
+  FROM GRAY_ZONE_ADJUDICATED gza
+  JOIN ABT_PRODUCTS ap ON ap.id = gza.abt_id
+  JOIN BUY_PRODUCTS bp ON bp.id = gza.buy_id
+  WHERE gza.verdict IS NULL
+) retry
+WHERE t.abt_id = retry.abt_id AND t.buy_id = retry.buy_id AND t.verdict IS NULL;
+
+SELECT COUNT(*) AS still_null_after_retry FROM GRAY_ZONE_ADJUDICATED WHERE verdict IS NULL;
+
 CREATE OR REPLACE TABLE CANDIDATE_PAIRS_ADJUDICATED AS
 SELECT b.abt_id, b.buy_id, b.blocking_reason, b.embed_sim, b.attr_sim, b.pre_score, b.band,
   gz.passed_gate,
@@ -584,6 +609,11 @@ WITH scored AS (
       WHEN llm_confidence IS NOT NULL THEN
         0.3*embed_sim + 0.3*COALESCE(attr_sim, embed_sim) + 0.4*(CASE WHEN llm_is_match THEN llm_confidence ELSE 1-llm_confidence END)
       WHEN band = 'GRAY_ZONE' AND passed_gate = FALSE THEN pre_score * 0.5
+      -- Gray zone, passed the gate, but AI_COMPLETE still had no usable
+      -- verdict even after the retry above (~rare residual) -- same safe
+      -- fallback as AUTO_ACCEPT/AUTO_REJECT, but the explanation below says
+      -- so honestly instead of claiming "no review was needed."
+      WHEN band = 'GRAY_ZONE' AND passed_gate = TRUE AND llm_confidence IS NULL THEN pre_score
       ELSE pre_score
     END AS final_confidence,
     CASE
@@ -592,6 +622,9 @@ WITH scored AS (
           || ' llm(' || llm_is_match || ',' || ROUND(llm_confidence,3) || ')=' || rationale
       WHEN band = 'GRAY_ZONE' AND passed_gate = FALSE THEN
         'embed=' || ROUND(embed_sim,3) || ' attr=' || ROUND(COALESCE(attr_sim,0),3) || ' -- fast filter gate said not-a-match'
+      WHEN band = 'GRAY_ZONE' AND passed_gate = TRUE AND llm_confidence IS NULL THEN
+        'embed=' || ROUND(embed_sim,3) || ' attr=' || ROUND(COALESCE(attr_sim,0),3)
+          || ' -- LLM review was attempted (passed the fast gate) but did not return a usable verdict, even after retry; falling back to embedding+attribute score only'
       ELSE 'embed=' || ROUND(embed_sim,3) || ' attr=' || ROUND(COALESCE(attr_sim,0),3) || ' -- ' || band
     END AS explanation
   FROM CANDIDATE_PAIRS_ADJUDICATED

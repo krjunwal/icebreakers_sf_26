@@ -438,14 +438,26 @@ SELECT extracted FROM ABT_ATTRS LIMIT 5;
 ```
 **Confirmed live (Sept 2026):** the real shape is nested one level under `response`, e.g. `{"error": null, "response": {"brand": "Bose", "model_number": "AM53BK"}}` — NOT a flat top-level object. The block below already reflects this.
 
+**Second confirmed live bug:** despite the prompt saying "reply ... or empty if none is present," the model sometimes writes the literal word `NONE` instead of an actual empty string (verified: `NONE` showed up as a frequent `model_number` value). Left unhandled, two unrelated products both extracted as `model_number='NONE'` would score a *perfect* string-similarity match — silently inflating `attr_sim` for pairs with zero real evidence. The block below normalizes known placeholder words to true NULL before that can happen.
+
 Then continue:
 ```sql
 CREATE OR REPLACE TABLE ABT_ATTRS_FLAT AS
-SELECT id, UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
+SELECT
+  id,
+  CASE WHEN UPPER(TRIM(extracted:response:brand::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:brand::VARCHAR)) END AS brand,
+  CASE WHEN UPPER(TRIM(extracted:response:model_number::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:model_number::VARCHAR)) END AS model_number
 FROM ABT_ATTRS;
 
 CREATE OR REPLACE TABLE BUY_ATTRS_FLAT AS
-SELECT id, UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand, UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
+SELECT
+  id,
+  CASE WHEN UPPER(TRIM(extracted:response:brand::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:brand::VARCHAR)) END AS brand,
+  CASE WHEN UPPER(TRIM(extracted:response:model_number::VARCHAR)) IN ('', 'NONE', 'N/A', 'NA', 'NULL', 'EMPTY', 'UNKNOWN', 'UNCLEAR') THEN NULL
+       ELSE UPPER(TRIM(extracted:response:model_number::VARCHAR)) END AS model_number
 FROM BUY_ATTRS;
 
 CREATE OR REPLACE TABLE CANDIDATE_PAIRS_ATTR AS

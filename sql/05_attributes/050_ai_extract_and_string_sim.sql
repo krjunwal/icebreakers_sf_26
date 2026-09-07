@@ -41,21 +41,21 @@ SELECT
 FROM BUY_PRODUCTS;
 
 -- Flatten the AI_EXTRACT JSON response into plain columns for cheap joins downstream.
--- NOTE: AI_EXTRACT's exact response shape (top-level object vs {"response": {...}})
--- may differ from what's assumed here -- run `SELECT extracted FROM ABT_ATTRS LIMIT 5;`
--- first and adjust the :brand / :model_number paths below if needed.
+-- CONFIRMED shape (verified live against a real account, Sept 2026): responses are
+-- nested one level under "response", e.g. {"error": null, "response": {"brand": "Bose",
+-- "model_number": "AM53BK"}} -- NOT a flat top-level object. Path below reflects this.
 CREATE OR REPLACE TABLE ABT_ATTRS_FLAT AS
 SELECT
   id,
-  UPPER(TRIM(extracted:brand::VARCHAR)) AS brand,
-  UPPER(TRIM(extracted:model_number::VARCHAR)) AS model_number
+  UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand,
+  UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
 FROM ABT_ATTRS;
 
 CREATE OR REPLACE TABLE BUY_ATTRS_FLAT AS
 SELECT
   id,
-  UPPER(TRIM(extracted:brand::VARCHAR)) AS brand,
-  UPPER(TRIM(extracted:model_number::VARCHAR)) AS model_number
+  UPPER(TRIM(extracted:response:brand::VARCHAR)) AS brand,
+  UPPER(TRIM(extracted:response:model_number::VARCHAR)) AS model_number
 FROM BUY_ATTRS;
 
 -- ---------------------------------------------------------------------------

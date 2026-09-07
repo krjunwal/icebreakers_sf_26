@@ -484,11 +484,13 @@ FROM CANDIDATE_PAIRS_ATTR;
 
 ### Step 4.5 — Cost-gated LLM adjudication
 
+**These thresholds are empirically calibrated (Sept 2026, live run), not guessed.** A first pass at 0.80/0.30 put 86% of all pairs into `GRAY_ZONE` (inverted from the design intent), and testing showed `AUTO_ACCEPT` at that level was only ~75% precise on its own (same-brand product variants score deceptively high on embedding/attribute similarity alone, with no LLM check to catch it). Grid-checking a few threshold pairs against the real ground truth (see the appendix note below if you want to re-run this check yourself) found `0.50`/`0.90` as the best tradeoff: only 1.2% of true matches lost to auto-reject, 98.4% precision in auto-accept, and the gray zone cut from 70,000 to ~20,400 pairs (71% fewer AI calls needed).
+
 ```sql
 USE ROLE ABT_BUY_ROLE; USE WAREHOUSE ABT_BUY_WH; USE DATABASE ABT_BUY; USE SCHEMA PUBLIC;
 
-SET AUTO_ACCEPT_THRESHOLD = 0.80;
-SET AUTO_REJECT_THRESHOLD = 0.30;
+SET AUTO_ACCEPT_THRESHOLD = 0.90;
+SET AUTO_REJECT_THRESHOLD = 0.50;
 
 CREATE OR REPLACE TABLE CANDIDATE_PAIRS_BANDED AS
 SELECT abt_id, buy_id, blocking_reason, embed_sim, attr_sim,
@@ -540,7 +542,21 @@ LEFT JOIN GRAY_ZONE_ADJUDICATED adj ON adj.abt_id = b.abt_id AND adj.buy_id = b.
 
 SELECT COUNT(*) AS total_pairs, COUNT(llm_confidence) AS pairs_with_llm_verdict FROM CANDIDATE_PAIRS_ADJUDICATED;
 ```
-**Expected result:** the `band` breakdown shows most pairs as `AUTO_ACCEPT`/`AUTO_REJECT`, with `GRAY_ZONE` a smaller minority (that minority is all that spends real LLM budget). **If `GRAY_ZONE` is tens of thousands, tell me** — we'd tighten the thresholds before this runs (cost control).
+**Expected result:** with the calibrated thresholds above, `GRAY_ZONE` should be around 20,400 (not 70,000 — that inverted result is what a naive un-calibrated guess produces, see the note above). If your numbers come out very different from this, something upstream (blocking, embeddings, or attribute extraction) likely diverged from what's expected in this dataset — ask before proceeding.
+
+**Optional — how to re-verify/re-tune these thresholds yourself against ground truth:**
+
+```sql
+SELECT
+  SUM(CASE WHEN gt.id_abt IS NOT NULL AND b.pre_score < 0.50 THEN 1 ELSE 0 END) AS true_matches_lost_to_reject,
+  SUM(CASE WHEN gt.id_abt IS NULL AND b.pre_score >= 0.90 THEN 1 ELSE 0 END) AS false_positives_in_accept,
+  SUM(CASE WHEN b.pre_score < 0.50 THEN 1 ELSE 0 END) AS reject_total,
+  SUM(CASE WHEN b.pre_score >= 0.90 THEN 1 ELSE 0 END) AS accept_total,
+  COUNT(*) - SUM(CASE WHEN b.pre_score < 0.50 THEN 1 ELSE 0 END) - SUM(CASE WHEN b.pre_score >= 0.90 THEN 1 ELSE 0 END) AS gray_zone_total
+FROM CANDIDATE_PAIRS_BANDED b
+LEFT JOIN GROUND_TRUTH_RAW gt ON gt.id_abt = b.abt_id AND gt.id_buy = b.buy_id;
+```
+Swap the `0.50`/`0.90` literals to try other threshold pairs; watch `true_matches_lost_to_reject` and `false_positives_in_accept` — both should stay small relative to `reject_total`/`accept_total`.
 
 ### Step 4.6 — Combine into final scores + resolve conflicts
 

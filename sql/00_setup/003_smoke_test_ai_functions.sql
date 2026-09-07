@@ -16,8 +16,11 @@ USE SCHEMA PUBLIC;
 SELECT AI_COMPLETE('mistral-7b', 'Say the single word: OK') AS complete_cheap;
 
 -- 2. AI_COMPLETE -- capable model, structured JSON output (used in adjudication stage)
+-- CONFIRMED live (Sept 2026): mistral-large2/claude-4-sonnet/openai-gpt-4.1/
+-- snowflake-llama-3.3-70b all deprecated ("legacy state"). claude-sonnet-5
+-- confirmed working -- model names churn fast, re-verify if it's been a while.
 SELECT AI_COMPLETE(
-  model => 'mistral-large2',
+  model => 'claude-sonnet-5',
   prompt => 'Extract brand and model from: "Sony Turntable - PSLX350H"',
   response_format => {
     'type': 'json',

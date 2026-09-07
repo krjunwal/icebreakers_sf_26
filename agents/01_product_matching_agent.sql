@@ -32,7 +32,7 @@ DECLARE
   result VARCHAR;
 BEGIN
   SELECT AI_COMPLETE(
-    model => 'mistral-large2',
+    model => 'claude-sonnet-5',
     prompt => 'Product A (Abt): ' || COALESCE(ap.name, '') || ' -- ' || COALESCE(ap.description, '') ||
               '\nProduct B (Buy): ' || COALESCE(bp.name, '') || ' -- ' || COALESCE(bp.description, '') ||
               '\nKnown similarity signals for this pair -- semantic embedding similarity: '

@@ -520,9 +520,14 @@ JOIN ABT_PRODUCTS ap ON ap.id = b.abt_id
 JOIN BUY_PRODUCTS bp ON bp.id = b.buy_id
 WHERE b.band = 'GRAY_ZONE';
 
+-- CONFIRMED live (Sept 2026): mistral-large2/claude-4-sonnet/openai-gpt-4.1/
+-- snowflake-llama-3.3-70b are all deprecated ("legacy state, please use
+-- other models"). claude-sonnet-5 confirmed working via SHOW MODELS IN
+-- SNOWFLAKE.MODELS + a live test call -- model names churn fast on Cortex,
+-- re-verify with a trivial AI_COMPLETE call if it's been a while.
 CREATE OR REPLACE TABLE GRAY_ZONE_ADJUDICATED AS
 SELECT g.abt_id, g.buy_id, AI_COMPLETE(
-  model => 'mistral-large2',
+  model => 'claude-sonnet-5',
   prompt => 'Product A: ' || COALESCE(ap.name,'') || ' -- ' || COALESCE(ap.description,'') ||
             '\nProduct B: ' || COALESCE(bp.name,'') || ' -- ' || COALESCE(bp.description,'') ||
             '\nDecide whether Product A and Product B are the exact same retail product listed by two different retailers. Consider brand, model number, and specs; ignore wording/formatting differences.',
@@ -851,8 +856,10 @@ $$
 DECLARE
   result VARCHAR;
 BEGIN
+  -- claude-sonnet-5 confirmed working live (Sept 2026) -- mistral-large2
+  -- and several other older model names were found deprecated the same day.
   SELECT AI_COMPLETE(
-    model => 'mistral-large2',
+    model => 'claude-sonnet-5',
     prompt => 'Product A (Abt): ' || COALESCE(ap.name,'') || ' -- ' || COALESCE(ap.description,'') ||
               '\nProduct B (Buy): ' || COALESCE(bp.name,'') || ' -- ' || COALESCE(bp.description,'') ||
               '\nKnown similarity signals for this pair -- semantic embedding similarity: '

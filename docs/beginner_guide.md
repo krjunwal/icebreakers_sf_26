@@ -706,6 +706,45 @@ SELECT * FROM V_MATCHING_ACCURACY;
 ```
 **Expected result:** one row with real `precision`, `recall`, `f1_score` numbers. **Write these down** — they go into `architecture.md` and the demo video.
 
+**Also create these three supporting views now** — the Streamlit "Matching Accuracy" page (Part 9) depends on them, and it's easy to forget them since they're not needed for the headline metric above:
+```sql
+CREATE OR REPLACE VIEW V_MATCHING_ACCURACY_INCL_REVIEW AS
+WITH predicted AS (
+  SELECT abt_id, buy_id FROM MATCHED_PRODUCTS WHERE final_label IN ('MATCH', 'REVIEW')
+),
+tp AS (
+  SELECT COUNT(*) AS n FROM predicted p
+  JOIN GROUND_TRUTH_MATCHES gt ON gt.abt_id = p.abt_id AND gt.buy_id = p.buy_id
+),
+totals AS (
+  SELECT
+    (SELECT COUNT(*) FROM predicted) AS predicted_count,
+    (SELECT COUNT(*) FROM GROUND_TRUTH_MATCHES) AS ground_truth_count,
+    (SELECT n FROM tp) AS true_positives
+)
+SELECT
+  predicted_count, ground_truth_count, true_positives,
+  ROUND(true_positives / NULLIF(predicted_count,0), 4) AS precision,
+  ROUND(true_positives / NULLIF(ground_truth_count,0), 4) AS recall
+FROM totals;
+
+CREATE OR REPLACE VIEW V_FALSE_POSITIVES AS
+SELECT ms.*, ap.name AS abt_name, bp.name AS buy_name
+FROM MATCH_SCORES ms
+JOIN ABT_PRODUCTS ap ON ap.id = ms.abt_id
+JOIN BUY_PRODUCTS bp ON bp.id = ms.buy_id
+LEFT JOIN GROUND_TRUTH_MATCHES gt ON gt.abt_id = ms.abt_id AND gt.buy_id = ms.buy_id
+WHERE ms.candidate_label = 'MATCH' AND gt.abt_id IS NULL;
+
+CREATE OR REPLACE VIEW V_FALSE_NEGATIVES AS
+SELECT gt.abt_id, gt.buy_id, ap.name AS abt_name, bp.name AS buy_name, ms.final_confidence, ms.candidate_label, ms.explanation
+FROM GROUND_TRUTH_MATCHES gt
+JOIN ABT_PRODUCTS ap ON ap.id = gt.abt_id
+JOIN BUY_PRODUCTS bp ON bp.id = gt.buy_id
+LEFT JOIN MATCH_SCORES ms ON ms.abt_id = gt.abt_id AND ms.buy_id = gt.buy_id
+WHERE ms.abt_id IS NULL OR ms.candidate_label != 'MATCH';
+```
+
 ---
 
 ## Part 5: Synthetic pricing data
@@ -1126,17 +1165,65 @@ DESCRIBE MCP SERVER ABT_BUY_MCP_SERVER;
 
 ## Part 9: Streamlit dashboard
 
-You'll deploy this **after** GitHub is set up (Part 10), using Snowsight's "create from repository" feature, which needs your repo to exist on GitHub first.
+You'll deploy this **after** GitHub is set up (Part 10) — Snowflake needs to read the code from your GitHub repo, so that has to exist first.
 
-**Step 9.1** — In Snowsight, left sidebar → **Projects** → **Streamlit**.
-**Step 9.2** — Click the **+ Streamlit** dropdown → **Create from repository** (exact wording may vary slightly by Snowsight version).
-**Step 9.3** — Connect your GitHub account/repo when prompted (you'll do Part 10 first so this repo exists).
-**Step 9.4** — Point it at `streamlit/streamlit_app.py` as the main file, and set the warehouse to `ABT_BUY_WH`.
-**Step 9.5** — Click **Create**. Snowsight opens the running app.
+**Confirmed live (Sept 2026): the Snowsight UI wizard ("+ Streamlit" → "Create from repository") is finicky** — it can hit several privilege gaps and a confusing "already exists" error along the way (all because the wizard runs as `ACCOUNTADMIN`, which doesn't automatically have rights on objects owned by `ABT_BUY_ROLE`). The path below does the same thing directly in SQL, which is more reliable and faster to fix if something's still off. Run all of this as `ACCOUNTADMIN`.
 
-**Expected result:** a working dashboard with 3 pages (Matching Accuracy / Competitive Pricing / Market Trends) in the sidebar navigation.
+**Step 9.1 — Grant ACCOUNTADMIN what it needs up front** (avoids discovering these one at a time):
+```sql
+USE ROLE ACCOUNTADMIN;
+GRANT USAGE ON DATABASE ABT_BUY TO ROLE ACCOUNTADMIN;
+GRANT USAGE ON SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT USAGE ON WAREHOUSE ABT_BUY_WH TO ROLE ACCOUNTADMIN;
+GRANT CREATE STREAMLIT ON SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT CREATE GIT REPOSITORY ON SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT SELECT ON ALL TABLES IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT SELECT ON ALL VIEWS IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT SELECT ON FUTURE VIEWS IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT USAGE ON ALL PROCEDURES IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+GRANT USAGE ON FUTURE PROCEDURES IN SCHEMA ABT_BUY.PUBLIC TO ROLE ACCOUNTADMIN;
+```
+(The `SELECT`/`USAGE` grants matter because the Streamlit app "runs with owner's rights" — the owner is whichever role created the `STREAMLIT` object, which is `ACCOUNTADMIN` here — so it needs read access to everything the dashboard queries, not just the objects it directly creates.)
 
-**Common error → fix:** if it can't find the pages, confirm `streamlit/pages/` contains the three numbered `.py` files and `streamlit/environment.yml` lists `streamlit`, `pandas`, `snowflake-snowpark-python`.
+**Step 9.2 — Create a "no authentication" API integration for your public GitHub repo:**
+```sql
+CREATE API INTEGRATION <YOUR_REPO_NAME>_GIT_INTEGRATION
+  API_PROVIDER = git_https_api
+  API_ALLOWED_PREFIXES = ('https://github.com/<your-github-username>/')
+  ALLOWED_AUTHENTICATION_SECRETS = none
+  ENABLED = TRUE;
+```
+Use a trailing slash on the prefix (covers your whole GitHub namespace) — a prefix ending exactly at the repo name without a slash can fail with a confusing "location not allowed" error when Snowflake appends `.git` to the actual clone URL.
+
+**Step 9.3 — Register the git repository:**
+```sql
+CREATE GIT REPOSITORY ABT_BUY.PUBLIC.<YOUR_REPO_NAME>
+  API_INTEGRATION = <YOUR_REPO_NAME>_GIT_INTEGRATION
+  ORIGIN = 'https://github.com/<your-github-username>/<your-repo-name>.git';
+```
+
+**Step 9.4 — Create the Streamlit app, pointing at the repo directly:**
+```sql
+USE WAREHOUSE ABT_BUY_WH;
+
+CREATE OR REPLACE STREAMLIT ABT_BUY.PUBLIC.ABT_BUY_DASHBOARD
+  ROOT_LOCATION = '@ABT_BUY.PUBLIC.<YOUR_REPO_NAME>/branches/main/streamlit'
+  MAIN_FILE = 'streamlit_app.py'
+  QUERY_WAREHOUSE = ABT_BUY_WH
+  TITLE = 'Abt-Buy Product Matching Dashboard';
+```
+
+**Step 9.5 — Open it.** Snowsight → **Projects** → **Streamlit** → click **`ABT_BUY_DASHBOARD`**.
+
+**Expected result:** a working dashboard with 3 pages (Matching Accuracy / Competitive Pricing / Market Trends) in the sidebar navigation, plus 3 metric tiles on the landing page (confirmed matches / review queue / F1 score) matching your real measured numbers.
+
+**Common error → fix:**
+- *"Insufficient privileges to operate on table/view X... owner role ACCOUNTADMIN must have SELECT granted"* → you skipped or need to re-run Step 9.1's grants (they need to cover every table/view the app queries, including ones added later — that's what the `FUTURE` grants are for).
+- *Streamlit pages don't show up* → confirm `streamlit/pages/` in your repo has the three numbered `.py` files, and `streamlit/environment.yml` lists `streamlit`, `pandas`, `snowflake-snowpark-python`.
+- *If you go the UI wizard route instead of this SQL path* and hit "Object '...' already exists" on a repeat attempt, that's almost always the git repository object from a previous attempt — don't recreate it, select the existing one from the file browser instead.
+
+**Prefer the UI instead?** It's Snowsight → **Projects** → **Streamlit** → **+ Streamlit** dropdown → **Create from repository** → connect GitHub → select the repo → pick `streamlit/streamlit_app.py` → choose database `ABT_BUY` / schema `PUBLIC` → **"Run on warehouse"** (not "Run on container") → warehouse `ABT_BUY_WH` → **Create**. Just expect to possibly hit the same privilege gaps covered in Step 9.1 along the way.
 
 ---
 
@@ -1205,3 +1292,7 @@ Open `docs/architecture.md` in this repo. It's already written (1-2 pages, as re
 | `AI_EXTRACT`/`AI_COMPLETE` JSON response doesn't match `:field` paths | The function's actual response shape differs slightly from what the SQL assumes | Run `SELECT extracted FROM ABT_ATTRS LIMIT 5;` (or equivalent) and look at the real shape, adjust the `:brand`/`:model_number` (or similar) paths | Query returns non-NULL values after the fix |
 | `CREATE AGENT`/`CREATE MCP SERVER`/`CREATE SEMANTIC VIEW` syntax error | These are newer Snowflake features whose exact syntax can drift | Paste the exact error text back — we fix the specific clause, not the whole file | Object creates cleanly on retry |
 | Ambiguous multi-statement result ("did everything succeed?") | Snowsight shows one result per statement, easy to lose track of which is which | Re-run the specific suspect line alone (click on it, Ctrl+Enter), or check **Monitoring → Query History** for a definitive per-statement log | The specific line shows green/success on its own |
+| `Unknown tool type` / `"spec is invalid: null"` on `CREATE MCP SERVER` | MCP tool types use a different, uppercase enum (`CORTEX_ANALYST_MESSAGE`, `CORTEX_SEARCH_SERVICE_QUERY`, `SYSTEM_EXECUTE_SQL`) than `CREATE AGENT`'s lowercase ones, and every tool also needs `title`+`description` plus a single `identifier` (not `semantic_view`/`search_service` keys) | Use the exact spec in Part 8 — don't reuse `CREATE AGENT` tool syntax for MCP servers | Server creates cleanly, `SHOW MCP SERVERS` returns it |
+| Any `"Insufficient privileges... role ACCOUNTADMIN must have X granted"` while using a Snowsight UI wizard (git repo connect, Streamlit creation, etc.) | Several Snowsight UI actions run as `ACCOUNTADMIN` regardless of your active role, and `ACCOUNTADMIN` has no automatic rights on objects owned by `ABT_BUY_ROLE` | `GRANT` the specific privilege named in the error `... TO ROLE ACCOUNTADMIN` (not `ABT_BUY_ROLE`) | Retry the same UI action |
+| `"Location '...' is not allowed by integration"` when connecting a git repository | The API integration's `API_ALLOWED_PREFIXES` didn't include a trailing slash, and Snowflake's prefix match wants a clean path boundary (not just a raw string prefix) — the appended `.git` breaks a prefix that ends exactly at the repo name | `ALTER API INTEGRATION <name> SET API_ALLOWED_PREFIXES = ('https://github.com/<username>/')` (trailing slash, whole namespace) | Retry the git repository connection |
+| `"Object '...' already exists"` when redoing "Create from repository" for Streamlit | The git repository connection object was already created successfully in an earlier attempt | Don't recreate it — select the existing repository from the file browser instead of going through "Clone Git Repository" again | File browser shows your repo without erroring |

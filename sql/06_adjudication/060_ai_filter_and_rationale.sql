@@ -19,8 +19,21 @@ USE WAREHOUSE ABT_BUY_WH;
 USE DATABASE ABT_BUY;
 USE SCHEMA PUBLIC;
 
-SET AUTO_ACCEPT_THRESHOLD = 0.80;
-SET AUTO_REJECT_THRESHOLD = 0.30;
+-- Thresholds below are EMPIRICALLY CALIBRATED (Sept 2026, live run) against
+-- abt_buy_perfectMapping.csv ground truth, not guessed. The original guess
+-- (0.80 / 0.30) put 86% of all candidate pairs (70,000 of 81,121) into
+-- GRAY_ZONE -- inverted from the design intent. Worse, testing AUTO_ACCEPT
+-- at 0.80-0.85 showed only ~75% precision in that bucket (174 of 698
+-- "auto-accepted, no LLM check" pairs were actually false positives --
+-- same-brand product variants scoring deceptively high on embed/attr
+-- similarity alone). Grid-checked 0.45/0.85, 0.50/0.90, 0.55/0.95 against
+-- ground truth; 0.50/0.90 was the best tradeoff: only 13/1097 (1.2%) true
+-- matches lost to auto-reject, 98.4% precision in auto-accept (3 FP of
+-- 190), and GRAY_ZONE cut from 70,000 to ~20,400 (71% reduction in AI
+-- calls needed). See docs/hackathon_strategy.md or conversation history
+-- for the full calibration query if you need to re-verify on new data.
+SET AUTO_ACCEPT_THRESHOLD = 0.90;
+SET AUTO_REJECT_THRESHOLD = 0.50;
 
 CREATE OR REPLACE TABLE CANDIDATE_PAIRS_BANDED AS
 SELECT

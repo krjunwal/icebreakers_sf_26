@@ -88,7 +88,7 @@ def render(session):
     section_header("🔍", "Look at specific examples", CATEGORICAL["aqua"])
     st.caption("See exactly *why* the system made a particular call:")
 
-    tab_fp, tab_fn = st.tabs(["😬 Wrong matches (false positives)", "🙈 Missed matches (false negatives)"])
+    tab_fp, tab_fn = st.tabs(["❌ Wrong matches (false positives)", "🔍 Missed matches (false negatives)"])
 
     with tab_fp:
         st.caption("These pairs were flagged as a match, but the answer key says they aren't. Shows the system's actual reasoning for the mistake.")

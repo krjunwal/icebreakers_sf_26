@@ -96,7 +96,7 @@ def render(session):
                     )
                 else:
                     st.warning(
-                        f"🤔 **Possibly also sold on {match['OTHER_RETAILER']}** as *\"{other_name}\"* — "
+                        f"❓ **Possibly also sold on {match['OTHER_RETAILER']}** as *\"{other_name}\"* — "
                         f"flagged for human review ({match['FINAL_CONFIDENCE']:.0%} confidence), not auto-confirmed."
                     )
                 with st.expander("Why did the system make this call?"):
@@ -162,7 +162,7 @@ def render(session):
                 if r["FINAL_LABEL"] == "MATCH":
                     st.success(f"✅ **Our system confirms these are the same product** — {r['FINAL_CONFIDENCE']:.0%} confidence.")
                 elif r["FINAL_LABEL"] == "REVIEW":
-                    st.warning(f"🤔 **Uncertain** — {r['FINAL_CONFIDENCE']:.0%} confidence, flagged for human review.")
+                    st.warning(f"❓ **Uncertain** — {r['FINAL_CONFIDENCE']:.0%} confidence, flagged for human review.")
                 else:
                     st.error(f"❌ **Our system does not think these are the same product** ({r['FINAL_CONFIDENCE']:.0%} confidence).")
                 with st.expander("See the reasoning"):

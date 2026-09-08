@@ -193,19 +193,27 @@ def pill_row(items):
     st.markdown(f'<div>{pills}</div>', unsafe_allow_html=True)
 
 
-def pipeline_flow(steps):
-    """steps: list of (text, hex_color). Renders a left-to-right flow of
-    colored steps connected by arrows, e.g. Blocking -> Embeddings -> ...."""
-    parts = []
-    for i, (text, color) in enumerate(steps):
-        parts.append(
-            f'<span style="display:inline-block;background:{color};color:white;'
-            f'border-radius:8px;padding:8px 16px;font-size:0.85rem;font-weight:600;">{text}</span>'
-        )
-        if i < len(steps) - 1:
-            parts.append(f'<span style="color:{INK_MUTED};padding:0 10px;font-size:1.1rem;">&rarr;</span>')
-    st.markdown(f'<div style="display:flex;align-items:center;flex-wrap:wrap;">{"".join(parts)}</div>',
-                unsafe_allow_html=True)
+def pipeline_flow_interactive(steps, key="pipeline"):
+    """steps: list of (label, hex_color, explanation). Renders ONE row of
+    directly-clickable step buttons, with the picked step's explanation shown
+    right underneath -- replaces an earlier design that showed the same 5
+    step names twice (static colored pills you couldn't click, plus a
+    separate plain radio list below that you could) since that looked like
+    two disconnected controls instead of one deliberate one."""
+    state_key = f"_{key}_selected"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = 0
+
+    cols = st.columns(len(steps))
+    for i, (label, _color, _explanation) in enumerate(steps):
+        with cols[i]:
+            is_active = st.session_state[state_key] == i
+            if st.button(label, key=f"{key}_btn_{i}", use_container_width=True,
+                         type="primary" if is_active else "secondary"):
+                st.session_state[state_key] = i
+
+    _, _, explanation = steps[st.session_state[state_key]]
+    st.info(explanation)
 
 
 def donut_chart(df, label_col, value_col, color_domain, color_range, height=300):

@@ -17,9 +17,10 @@ def render(session):
         "Compares the latest price of every matched product on **Abt** vs. **Buy**. "
         "A negative gap means *we're* cheaper; a positive gap means the competitor is cheaper."
     )
-    st.warning(
-        "⚠️ **All prices/price-history on this page are synthetic/simulated** -- the Abt-Buy "
-        "dataset has no real time-series pricing. See `docs/architecture.md` for the generation method."
+    st.caption(
+        "🔬 Prices shown here are simulated for this demo -- the Abt-Buy dataset doesn't "
+        "include real historical pricing, so we generated realistic weekly price movement "
+        "to power this view. Product matches themselves are computed from the real dataset."
     )
 
     facts = session.sql(

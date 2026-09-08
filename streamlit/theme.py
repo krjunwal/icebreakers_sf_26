@@ -116,6 +116,32 @@ def inject_global_css():
             font-weight: 600;
             color: white;
         }}
+        /* Tab bar -- bigger, bolder labels with a clear colored active state.
+           Targets Streamlit's underlying BaseWeb tab component; selectors may
+           need revisiting if a future Streamlit version changes its internal
+           markup (same "DOC-VERIFY" caveat as the Snowflake-side SQL). */
+        [data-baseweb="tab-list"] {{
+            gap: 6px;
+            border-bottom: 2px solid {GRIDLINE};
+        }}
+        button[data-baseweb="tab"] {{
+            padding: 12px 22px !important;
+            border-radius: 10px 10px 0 0 !important;
+        }}
+        button[data-baseweb="tab"] p {{
+            font-size: 1.08rem !important;
+            font-weight: 700 !important;
+        }}
+        button[data-baseweb="tab"][aria-selected="true"] {{
+            background: {CATEGORICAL["blue"]}1a !important;
+        }}
+        button[data-baseweb="tab"][aria-selected="true"] p {{
+            color: {CATEGORICAL["blue"]} !important;
+        }}
+        [data-baseweb="tab-highlight"] {{
+            background-color: {CATEGORICAL["blue"]} !important;
+            height: 3px !important;
+        }}
         </style>
     """)
     st.markdown(css, unsafe_allow_html=True)

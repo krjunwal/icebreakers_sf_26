@@ -80,7 +80,10 @@ def render(session):
                 st.markdown(f"**{row['NAME']}**")
                 st.write(row["DESCRIPTION"] if pd.notna(row["DESCRIPTION"]) else "_No description available._")
             with d2:
-                stat_card("Price", f"${row['PRICE']:.2f}" if pd.notna(row["PRICE"]) else "n/a", sub=f"Sold on {retailer}")
+                if pd.notna(row["PRICE"]):
+                    stat_card("Price", f"${row['PRICE']:.2f}", sub=f"Sold on {retailer}")
+                else:
+                    stat_card("Price", "Not listed", sub=f"{retailer} didn't list a price for this item")
 
             match = _match_info(session, retailer, product_id)
             if match:
@@ -138,7 +141,10 @@ def render(session):
             with col:
                 st.markdown(f"#### {p.NAME}")
                 st.caption(f"Sold on **{p.RETAILER}**" + (f"  ·  Brand: **{p.BRAND}**" if pd.notna(p.BRAND) else ""))
-                st.metric("Price", f"${p.PRICE:.2f}" if pd.notna(p.PRICE) else "n/a")
+                if pd.notna(p.PRICE):
+                    st.metric("Price", f"${p.PRICE:.2f}")
+                else:
+                    st.metric("Price", "Not listed", help=f"{p.RETAILER} didn't list a price for this item")
                 st.write(p.DESCRIPTION if pd.notna(p.DESCRIPTION) else "_No description available._")
 
         st.markdown("")

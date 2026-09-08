@@ -317,25 +317,15 @@ def pill_row(items):
 
 def pipeline_flow_interactive(steps, key="pipeline"):
     """steps: list of (label, hex_color, explanation). Renders ONE row of
-    directly-clickable step buttons, with the picked step's explanation shown
-    right underneath -- replaces an earlier design that showed the same 5
-    step names twice (static colored pills you couldn't click, plus a
-    separate plain radio list below that you could) since that looked like
-    two disconnected controls instead of one deliberate one."""
-    state_key = f"_{key}_selected"
-    if state_key not in st.session_state:
-        st.session_state[state_key] = 0
-
+    colored step buttons, each a popover -- click one to reveal its
+    explanation, click away to close it. Nothing sits permanently on the
+    page by default; only whichever step you're actively looking at takes
+    up space."""
     cols = st.columns(len(steps))
-    for i, (label, _color, _explanation) in enumerate(steps):
+    for i, (label, _color, explanation) in enumerate(steps):
         with cols[i]:
-            is_active = st.session_state[state_key] == i
-            if st.button(label, key=f"{key}_btn_{i}", use_container_width=True,
-                         type="primary" if is_active else "secondary"):
-                st.session_state[state_key] = i
-
-    _, _, explanation = steps[st.session_state[state_key]]
-    st.info(explanation)
+            with st.popover(label, use_container_width=True):
+                st.markdown(explanation)
 
 
 def donut_chart(df, label_col, value_col, color_domain, color_range, height=300):

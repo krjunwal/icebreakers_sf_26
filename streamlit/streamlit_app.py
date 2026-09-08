@@ -58,9 +58,23 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     stat_card("Confirmed matches", f"{total_matches:,}", sub="Same product, high confidence",
               accent=CATEGORICAL["blue"])
+    metric_info("Confirmed matches", (
+        "Products the ensemble scored highly enough to automatically label **MATCH** -- "
+        "confidently the same item across both retailers, no human review needed.\n\n"
+        "**How it's decided:** the combined confidence score (blocking + embedding similarity + "
+        "attribute similarity + LLM adjudication for tricky cases) reached **0.70 or higher**.\n\n"
+        "These are the pairs that power the Competitive Pricing and Market Trends tabs."
+    ))
 with col2:
     stat_card("In human-review queue", f"{review_count:,}", sub="Uncertain — a person should double-check",
               accent=CATEGORICAL["orange"])
+    metric_info("In human-review queue", (
+        "Products where the signals disagree enough that we don't auto-confirm -- the combined "
+        "confidence score landed **between 0.40 and 0.70**: not low enough to dismiss, not high "
+        "enough to trust automatically.\n\n"
+        "Every review-queue pair still comes with the full evidence and rationale (see the "
+        "Matching Accuracy tab), so a reviewer isn't starting from scratch."
+    ))
 with col3:
     stat_card("Precision", f"{precision:.1%}" if precision is not None else "n/a",
               status_label=precision_label, status_color=precision_color)
@@ -103,7 +117,7 @@ pipeline_flow_interactive([
         "directly. A matching model number is very strong evidence — much stronger than similar "
         "wording alone."
     )),
-    ("🩷 4. Ask AI (tricky cases)", CATEGORICAL["magenta"], (
+    ("🤖 4. Ask AI (tricky cases)", CATEGORICAL["magenta"], (
         "For the pairs where the signals above don't give a clear enough answer, we directly ask "
         "a large language model: *\"are these the same product?\"* — it replies with a yes/no answer "
         "**and a written reason**. This is the most expensive step, so it's only used when genuinely necessary."
@@ -136,9 +150,3 @@ with tab3:
 
 with tab4:
     tab_ask_anything.render(session)
-
-gradient_divider()
-st.caption(
-    "🔬 Pricing figures throughout this app are simulated for demo purposes -- the Abt-Buy "
-    "dataset has no real historical prices. Product matching itself runs on the real dataset."
-)

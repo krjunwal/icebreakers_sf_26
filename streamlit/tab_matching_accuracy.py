@@ -5,8 +5,8 @@ import altair as alt
 import streamlit as st
 
 from theme import (
-    stat_card, status_for, altair_base, donut_chart,
-    ACCURACY_THRESHOLDS, STATUS, INK_MUTED, OUTCOME_LABELS,
+    stat_card, status_for, altair_base, donut_chart, section_header, gradient_divider,
+    ACCURACY_THRESHOLDS, STATUS, INK_MUTED, OUTCOME_LABELS, CATEGORICAL,
 )
 
 
@@ -39,7 +39,7 @@ def render(session):
                    status_label=label, status_color=color)
     with c4:
         stat_card("Missed matches", f"{int(row['FALSE_NEGATIVES']):,}",
-                   sub="Real matches we didn't confidently confirm")
+                   sub="Real matches we didn't confidently confirm", accent=CATEGORICAL["violet"])
 
     st.caption(
         "💡 In plain words: when this system says **\"these are the same product,\" "
@@ -51,7 +51,7 @@ def render(session):
         incl = session.sql("SELECT * FROM V_MATCHING_ACCURACY_INCL_REVIEW").to_pandas()
         st.dataframe(incl, use_container_width=True, hide_index=True)
 
-    st.divider()
+    gradient_divider()
 
     label_counts = session.sql(
         "SELECT candidate_label, COUNT(*) AS pair_count FROM MATCH_SCORES GROUP BY candidate_label"
@@ -84,8 +84,9 @@ def render(session):
         )
         st.altair_chart(altair_base(chart), use_container_width=True)
 
-    st.divider()
-    st.markdown("**Look at specific examples** -- see exactly *why* the system made a particular call:")
+    gradient_divider()
+    section_header("🔍", "Look at specific examples", CATEGORICAL["aqua"])
+    st.caption("See exactly *why* the system made a particular call:")
 
     tab_fp, tab_fn = st.tabs(["😬 Wrong matches (false positives)", "🙈 Missed matches (false negatives)"])
 

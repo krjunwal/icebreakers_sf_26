@@ -116,6 +116,88 @@ def inject_global_css():
             font-weight: 600;
             color: white;
         }}
+        .stat-card {{
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }}
+        .stat-card:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+        }}
+        .hero-banner {{
+            background: linear-gradient(120deg, {CATEGORICAL["blue"]} 0%, {CATEGORICAL["violet"]} 55%, {CATEGORICAL["magenta"]} 100%);
+            border-radius: 16px;
+            padding: 30px 34px;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 28px rgba(42,120,214,0.28);
+        }}
+        .hero-banner .hero-title {{
+            color: white;
+            font-size: 2.05rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }}
+        .hero-banner .hero-subtitle {{
+            color: rgba(255,255,255,0.92);
+            font-size: 1.02rem;
+        }}
+        .section-header {{
+            display: flex;
+            align-items: center;
+            margin: 20px 0 12px 0;
+        }}
+        .section-badge {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            margin-right: 10px;
+        }}
+        .section-header-text {{
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: {INK_PRIMARY};
+        }}
+        .gradient-divider {{
+            height: 4px;
+            border-radius: 4px;
+            margin: 26px 0;
+            opacity: 0.85;
+            background: linear-gradient(90deg, {CATEGORICAL["blue"]}, {CATEGORICAL["aqua"]},
+                {CATEGORICAL["yellow"]}, {CATEGORICAL["magenta"]}, {CATEGORICAL["violet"]});
+        }}
+        [data-testid="stButton"] button {{
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+        }}
+        [data-testid="stButton"] button:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+        }}
+        [data-testid="stMetric"] {{
+            background: {SURFACE};
+            border: 1px solid {BORDER};
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }}
+        [data-testid="stAlert"] {{
+            border-radius: 10px !important;
+        }}
+        [data-testid="stDataFrame"] {{
+            border-radius: 10px !important;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }}
+        [data-testid="stExpander"] {{
+            border-radius: 10px !important;
+            border: 1px solid {BORDER} !important;
+        }}
         /* Tab bar -- bigger, bolder labels with a clear colored active state.
            Targets Streamlit's underlying BaseWeb tab component; selectors may
            need revisiting if a future Streamlit version changes its internal
@@ -163,20 +245,52 @@ ACCURACY_THRESHOLDS = [
 ]
 
 
-def stat_card(label, value, sub=None, status_label=None, status_color=None):
+def stat_card(label, value, sub=None, status_label=None, status_color=None, accent=None):
     # Built as ONE line, deliberately -- Markdown treats 4+ spaces of leading
     # indentation as a code block, so an indented multi-line f-string here
     # gets partially rendered as literal text instead of parsed as HTML.
+    # `accent` (or status_color, if no accent is given) becomes a colored top
+    # border -- pure decoration for cards with no status, and a reinforcing
+    # echo of the badge color for cards that have one.
+    top_color = accent or status_color
+    border_style = f'border-top:4px solid {top_color};' if top_color else ""
     badge_html = (
         f'<div class="status-badge" style="background:{status_color}">{status_label}</div>'
         if status_label else ""
     )
     sub_html = f'<div class="stat-sub">{sub}</div>' if sub else ""
     html = (
-        f'<div class="stat-card"><div class="stat-label">{label}</div>'
+        f'<div class="stat-card" style="{border_style}"><div class="stat-label">{label}</div>'
         f'<div class="stat-value">{value}</div>{sub_html}{badge_html}</div>'
     )
     st.markdown(html, unsafe_allow_html=True)
+
+
+def hero_banner(title, subtitle):
+    """A colorful gradient banner for the page title -- the first thing a
+    viewer sees, deliberately more showcase-like than a plain st.title()."""
+    st.markdown(
+        f'<div class="hero-banner"><div class="hero-title">{title}</div>'
+        f'<div class="hero-subtitle">{subtitle}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def section_header(icon, text, color):
+    """A colored icon-badge + bold title, used for full-width section titles
+    (avoid inside narrow st.columns -- the badge doesn't wrap well there)."""
+    st.markdown(
+        f'<div class="section-header"><span class="section-badge" '
+        f'style="background:{color}22;color:{color};">{icon}</span>'
+        f'<span class="section-header-text">{text}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def gradient_divider():
+    """A colorful rainbow-gradient divider bar, replacing the plain gray
+    st.divider() rule between sections."""
+    st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
 
 
 def pill_row(items):

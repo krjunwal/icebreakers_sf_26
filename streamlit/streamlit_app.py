@@ -15,7 +15,7 @@ from snowflake.snowpark.context import get_active_session
 
 from theme import (
     inject_global_css, stat_card, status_for, pill_row, pipeline_flow_interactive,
-    ACCURACY_THRESHOLDS, CATEGORICAL,
+    hero_banner, gradient_divider, ACCURACY_THRESHOLDS, CATEGORICAL,
 )
 import tab_product_explorer
 import tab_matching_accuracy
@@ -28,8 +28,10 @@ inject_global_css()
 
 session = get_active_session()
 
-st.title("🔗 AI-Powered Product Matching System")
-st.caption("Snowflake Cortex hackathon demo — Abt-Buy cross-retailer entity resolution")
+hero_banner(
+    "🔗 AI-Powered Product Matching System",
+    "Snowflake Cortex hackathon demo — Abt-Buy cross-retailer entity resolution",
+)
 
 pill_row([
     ("🧬 4-signal ensemble, not one similarity score", CATEGORICAL["blue"]),
@@ -54,9 +56,11 @@ precision_label, precision_color = status_for(precision, ACCURACY_THRESHOLDS)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    stat_card("Confirmed matches", f"{total_matches:,}", sub="Same product, high confidence")
+    stat_card("Confirmed matches", f"{total_matches:,}", sub="Same product, high confidence",
+              accent=CATEGORICAL["blue"])
 with col2:
-    stat_card("In human-review queue", f"{review_count:,}", sub="Uncertain — a person should double-check")
+    stat_card("In human-review queue", f"{review_count:,}", sub="Uncertain — a person should double-check",
+              accent=CATEGORICAL["orange"])
 with col3:
     stat_card("Precision", f"{precision:.1%}" if precision is not None else "n/a",
               status_label=precision_label, status_color=precision_color)
@@ -98,7 +102,7 @@ pipeline_flow_interactive([
 ], key="pipeline")
 st.caption("Only the genuinely ambiguous cases ever reach step 4 — most pairs are resolved cheaply by steps 1-3 alone.")
 
-st.markdown("")
+gradient_divider()
 tab0, tab1, tab2, tab3, tab4 = st.tabs([
     "🔎  Product Explorer", "🎯  Matching Accuracy", "💲  Competitive Pricing",
     "📈  Market Trends", "💬  Ask Anything",
@@ -119,7 +123,7 @@ with tab3:
 with tab4:
     tab_ask_anything.render(session)
 
-st.divider()
+gradient_divider()
 st.caption(
     "🔬 Pricing figures throughout this app are simulated for demo purposes -- the Abt-Buy "
     "dataset has no real historical prices. Product matching itself runs on the real dataset."

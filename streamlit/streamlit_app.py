@@ -2,12 +2,12 @@
 Abt-Buy Product Matching hackathon demo -- Streamlit in Snowflake entry point.
 
 Everything lives on ONE page with tabs (Product Explorer / Matching Accuracy /
-Competitive Pricing / Market Trends) rather than Streamlit's auto-discovered
-pages/ sidebar navigation -- deliberately, so a viewer never has to click
-away and lose context. Each tab's content lives in its own module
-(tab_product_explorer.py, tab_matching_accuracy.py, tab_competitive_pricing.py,
-tab_market_trends.py) purely for code organization; Streamlit does not treat
-them as separate pages.
+Competitive Pricing / Market Trends / Ask Anything) rather than Streamlit's
+auto-discovered pages/ sidebar navigation -- deliberately, so a viewer never
+has to click away and lose context. Each tab's content lives in its own
+module (tab_product_explorer.py, tab_matching_accuracy.py,
+tab_competitive_pricing.py, tab_market_trends.py, tab_ask_anything.py) purely
+for code organization; Streamlit does not treat them as separate pages.
 """
 
 import streamlit as st
@@ -21,6 +21,7 @@ import tab_product_explorer
 import tab_matching_accuracy
 import tab_competitive_pricing
 import tab_market_trends
+import tab_ask_anything
 
 st.set_page_config(page_title="Abt-Buy Product Matching", layout="wide", page_icon="🔗")
 inject_global_css()
@@ -108,8 +109,9 @@ picked_step = st.radio("👉 Click a step to see what it actually does:",
 st.info(STEP_EXPLANATIONS[picked_step])
 
 st.markdown("")
-tab0, tab1, tab2, tab3 = st.tabs([
-    "🔎  Product Explorer", "🎯  Matching Accuracy", "💲  Competitive Pricing", "📈  Market Trends",
+tab0, tab1, tab2, tab3, tab4 = st.tabs([
+    "🔎  Product Explorer", "🎯  Matching Accuracy", "💲  Competitive Pricing",
+    "📈  Market Trends", "💬  Ask Anything",
 ])
 
 with tab0:
@@ -123,6 +125,9 @@ with tab2:
 
 with tab3:
     tab_market_trends.render(session)
+
+with tab4:
+    tab_ask_anything.render(session)
 
 st.divider()
 st.caption(

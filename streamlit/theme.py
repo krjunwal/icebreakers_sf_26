@@ -293,6 +293,14 @@ def gradient_divider():
     st.markdown('<div class="gradient-divider"></div>', unsafe_allow_html=True)
 
 
+def metric_info(label, explanation):
+    """A small 'what does this mean' popover placed under a stat card --
+    click to reveal a plain-language definition + formula, without
+    cluttering the card itself with a permanent wall of text."""
+    with st.popover(f"ℹ️ What is {label}?", use_container_width=True):
+        st.markdown(explanation)
+
+
 def pill_row(items):
     """items: list of (text, hex_color). Renders a horizontal row of rounded
     color pills -- e.g. for a 'why this is different' callout or a pipeline

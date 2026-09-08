@@ -14,7 +14,7 @@ import streamlit as st
 from snowflake.snowpark.context import get_active_session
 
 from theme import (
-    inject_global_css, stat_card, status_for, pill_row, pipeline_flow,
+    inject_global_css, stat_card, status_for, pill_row, pipeline_flow_interactive,
     ACCURACY_THRESHOLDS, CATEGORICAL,
 )
 import tab_product_explorer
@@ -66,47 +66,37 @@ with col4:
 
 st.markdown("")
 st.markdown("##### How a match gets decided")
-pipeline_flow([
-    ("1. Narrow down", CATEGORICAL["blue"]),
-    ("2. Compare meaning", CATEGORICAL["orange"]),
-    ("3. Compare specs", CATEGORICAL["aqua"]),
-    ("4. Ask AI (tricky cases)", CATEGORICAL["magenta"]),
-    ("5. Final decision", CATEGORICAL["violet"]),
-])
-st.caption("Only the genuinely ambiguous cases ever reach step 4 — most pairs are resolved cheaply by steps 1-3 alone.")
-
-STEP_EXPLANATIONS = {
-    "1. Narrow down": (
+st.caption("👉 Click a step to see what it actually does:")
+pipeline_flow_interactive([
+    ("🔵 1. Narrow down", CATEGORICAL["blue"], (
         "Comparing every Abt product to every Buy product would mean checking over "
         "**1.18 million pairs** — far too slow and expensive. Instead, we first use cheap rules "
         "(shared brand names, shared words) to narrow that down to about **79,000 realistic "
         "candidates**. This step alone still catches **100% of the real matches** while throwing "
         "out 93% of the noise."
-    ),
-    "2. Compare meaning": (
+    )),
+    ("🟠 2. Compare meaning", CATEGORICAL["orange"], (
         "We turn each product's name and description into an AI-generated \"meaning fingerprint,\" "
         "then measure how similar two fingerprints are. This catches matches even when the two "
         "listings are worded completely differently."
-    ),
-    "3. Compare specs": (
+    )),
+    ("🟢 3. Compare specs", CATEGORICAL["aqua"], (
         "AI reads each listing and pulls out the brand and model number, then we compare those "
         "directly. A matching model number is very strong evidence — much stronger than similar "
         "wording alone."
-    ),
-    "4. Ask AI (tricky cases)": (
+    )),
+    ("🩷 4. Ask AI (tricky cases)", CATEGORICAL["magenta"], (
         "For the pairs where the signals above don't give a clear enough answer, we directly ask "
         "a large language model: *\"are these the same product?\"* — it replies with a yes/no answer "
         "**and a written reason**. This is the most expensive step, so it's only used when genuinely necessary."
-    ),
-    "5. Final decision": (
+    )),
+    ("🟣 5. Final decision", CATEGORICAL["violet"], (
         "We combine every signal above into one confidence score. High confidence becomes a "
         "**confirmed match**, medium confidence goes to the **human-review queue**, and low "
         "confidence is marked **not a match**."
-    ),
-}
-picked_step = st.radio("👉 Click a step to see what it actually does:",
-                        list(STEP_EXPLANATIONS.keys()), horizontal=True, label_visibility="visible")
-st.info(STEP_EXPLANATIONS[picked_step])
+    )),
+], key="pipeline")
+st.caption("Only the genuinely ambiguous cases ever reach step 4 — most pairs are resolved cheaply by steps 1-3 alone.")
 
 st.markdown("")
 tab0, tab1, tab2, tab3, tab4 = st.tabs([
@@ -131,7 +121,6 @@ with tab4:
 
 st.divider()
 st.caption(
-    "⚠️ Pricing and price-history figures throughout this app are synthetic/simulated "
-    "(the Abt-Buy dataset has no real time-series pricing) — see docs/architecture.md for the "
-    "generation method. Product matching results are computed from the real dataset."
+    "🔬 Pricing figures throughout this app are simulated for demo purposes -- the Abt-Buy "
+    "dataset has no real historical prices. Product matching itself runs on the real dataset."
 )

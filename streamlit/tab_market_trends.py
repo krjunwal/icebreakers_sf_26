@@ -13,9 +13,9 @@ def render(session):
         "A bird's-eye view of pricing behavior across every matched product -- which categories "
         "we cover most, how stable prices have been, and a brand-level price trend."
     )
-    st.warning(
-        "⚠️ Trend labels and price patterns on this page are derived from **synthetic/simulated** "
-        "pricing data. See docs/architecture.md for the generation method."
+    st.caption(
+        "🔬 Trend labels and price patterns here are based on simulated pricing -- the "
+        "Abt-Buy dataset has no real historical prices to draw from."
     )
 
     col1, col2 = st.columns(2)

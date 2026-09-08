@@ -4,7 +4,7 @@ trend line, and the Market Intelligence Agent's AI_AGG-generated narrative."""
 import altair as alt
 import streamlit as st
 
-from theme import altair_base, donut_chart, CATEGORICAL_ORDER, CATEGORY_LABELS, TREND_LABELS
+from theme import altair_base, donut_chart, CATEGORICAL_ORDER, CATEGORY_LABELS, TREND_LABELS, DIVERGING_NEG, DIVERGING_POS
 
 
 def render(session):
@@ -61,6 +61,82 @@ def render(session):
                 f"{no_pricing} matched pair(s) excluded -- synthetic pricing was only generated for "
                 "the labeled ground-truth pairs, not every pair the ensemble predicted."
             )
+
+    st.divider()
+
+    # -------------------------------------------------------------------
+    # Top 5 highlights
+    # -------------------------------------------------------------------
+    st.markdown("### 🏆 Top 5 highlights")
+    h1, h2, h3 = st.columns(3)
+
+    with h1:
+        st.markdown("**Biggest pricing opportunities**")
+        st.caption("Where we're priced highest above the competitor")
+        top_gaps = session.sql(
+            "SELECT abt_name, buy_name, abt_vs_buy_pct_gap FROM PRODUCT_MATCH_FACTS "
+            "WHERE final_label = 'MATCH' AND abt_vs_buy_pct_gap IS NOT NULL "
+            "ORDER BY abt_vs_buy_pct_gap DESC LIMIT 5"
+        ).to_pandas()
+        for i, r in enumerate(top_gaps.itertuples(), 1):
+            st.markdown(f"**{i}.** {r.ABT_NAME[:40]}{'...' if len(r.ABT_NAME) > 40 else ''}  \n:red[+{r.ABT_VS_BUY_PCT_GAP:.0f}% pricier]")
+
+    with h2:
+        st.markdown("**Most volatile prices**")
+        st.caption("Biggest week-to-week price swings")
+        volatile = session.sql(
+            """
+            SELECT pmf.abt_name, pmf.buy_name, AVG(vpv.volatility) AS avg_volatility
+            FROM V_PRICE_VOLATILITY vpv
+            JOIN PRODUCT_MATCH_FACTS pmf ON pmf.abt_id = vpv.abt_id AND pmf.buy_id = vpv.buy_id
+            WHERE pmf.final_label = 'MATCH' AND vpv.volatility IS NOT NULL
+            GROUP BY pmf.abt_name, pmf.buy_name
+            ORDER BY avg_volatility DESC
+            LIMIT 5
+            """
+        ).to_pandas()
+        for i, r in enumerate(volatile.itertuples(), 1):
+            st.markdown(f"**{i}.** {r.ABT_NAME[:40]}{'...' if len(r.ABT_NAME) > 40 else ''}  \n:orange[volatility {r.AVG_VOLATILITY:.2f}]")
+
+    with h3:
+        st.markdown("**Brands we compete on most**")
+        st.caption("By number of confirmed matches")
+        top_brand_counts = session.sql(
+            "SELECT brand, COUNT(*) AS n FROM PRODUCT_MATCH_FACTS "
+            "WHERE final_label = 'MATCH' AND brand IS NOT NULL GROUP BY brand ORDER BY n DESC LIMIT 5"
+        ).to_pandas()
+        for i, r in enumerate(top_brand_counts.itertuples(), 1):
+            st.markdown(f"**{i}.** {r.BRAND}  \n:blue[{r.N} matched product(s)]")
+
+    st.divider()
+
+    # -------------------------------------------------------------------
+    # Category comparison -- diverging bar, same convention as the brand
+    # chart on Competitive Pricing (blue = we're cheaper, red = pricier)
+    # -------------------------------------------------------------------
+    st.markdown("**Compare categories: who's priced better, by category?**")
+    cat_gap = session.sql(
+        "SELECT category, AVG(abt_vs_buy_pct_gap) AS avg_gap, COUNT(*) AS n FROM PRODUCT_MATCH_FACTS "
+        "WHERE final_label = 'MATCH' AND abt_vs_buy_pct_gap IS NOT NULL AND category IS NOT NULL "
+        "GROUP BY category ORDER BY avg_gap"
+    ).to_pandas()
+    cat_gap["DISPLAY"] = cat_gap["CATEGORY"].map(CATEGORY_LABELS).fillna(cat_gap["CATEGORY"])
+    if not cat_gap.empty:
+        chart = (
+            alt.Chart(cat_gap)
+            .mark_bar(cornerRadiusEnd=4, size=24)
+            .encode(
+                y=alt.Y("DISPLAY:N", sort=None, title=None),
+                x=alt.X("avg_gap:Q", title="Avg. price gap (%)"),
+                color=alt.condition(alt.datum.avg_gap < 0, alt.value(DIVERGING_NEG), alt.value(DIVERGING_POS)),
+                tooltip=[alt.Tooltip("DISPLAY:N", title="Category"),
+                         alt.Tooltip("avg_gap:Q", title="Avg gap %", format="+.1f"),
+                         alt.Tooltip("n:Q", title="Matched pairs")],
+            )
+            .properties(height=32 * len(cat_gap) + 40)
+        )
+        st.altair_chart(altair_base(chart), use_container_width=True)
+        st.caption("🔵 Blue = we're cheaper on average in that category  ·  🔴 Red = we're pricier")
 
     st.divider()
 

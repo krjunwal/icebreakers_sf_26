@@ -198,6 +198,16 @@ def inject_global_css():
             border-radius: 10px !important;
             border: 1px solid {BORDER} !important;
         }}
+        /* Every chart has a hover toolbar with a "Show data" / "Show chart"
+           toggle that swaps the chart for its raw, uncolored backing table --
+           any color-coded caption below the chart (e.g. "blue = cheaper, red
+           = pricier") stops making sense once that's toggled, and there's no
+           visible way back except hovering the exact same spot again. Hiding
+           just that toggle (download/fullscreen/search stay -- those are
+           harmless) so charts can't be switched into a confusing state. */
+        button[aria-label="Show data"], button[aria-label="Show chart"] {{
+            display: none !important;
+        }}
         /* Tab bar -- bigger, bolder labels with a clear colored active state.
            Targets Streamlit's underlying BaseWeb tab component; selectors may
            need revisiting if a future Streamlit version changes its internal

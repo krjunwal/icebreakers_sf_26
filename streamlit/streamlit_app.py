@@ -15,7 +15,7 @@ from snowflake.snowpark.context import get_active_session
 
 from theme import (
     inject_global_css, stat_card, status_for, pill_row, pipeline_flow_interactive,
-    hero_banner, gradient_divider, ACCURACY_THRESHOLDS, CATEGORICAL,
+    hero_banner, gradient_divider, metric_info, ACCURACY_THRESHOLDS, CATEGORICAL,
 )
 import tab_product_explorer
 import tab_matching_accuracy
@@ -64,9 +64,23 @@ with col2:
 with col3:
     stat_card("Precision", f"{precision:.1%}" if precision is not None else "n/a",
               status_label=precision_label, status_color=precision_color)
+    metric_info("Precision", (
+        "Of everything we confidently called a match, how many were actually correct?\n\n"
+        f"**Formula:** True positives ÷ (True positives + False positives)  \n"
+        f"= {int(accuracy['TRUE_POSITIVES']):,} ÷ {int(accuracy['PREDICTED_COUNT']):,} = "
+        f"**{precision:.1%}**\n\n"
+        "A high precision means you can trust a \"MATCH\" verdict -- few false alarms."
+    ))
 with col4:
     stat_card("Matching F1 score", f"{f1:.1%}" if f1 is not None else "n/a",
               status_label=f1_label, status_color=f1_color)
+    metric_info("F1 score", (
+        "A single number that balances Precision and Recall -- useful because a system can score "
+        "great on one while doing badly on the other (e.g. calling *everything* a match gives 100% "
+        "recall but terrible precision).\n\n"
+        f"**Formula:** 2 × (Precision × Recall) ÷ (Precision + Recall) = **{f1:.1%}**\n\n"
+        "See the **Matching Accuracy** tab for the full precision/recall breakdown."
+    ))
 
 st.markdown("")
 st.markdown("##### How a match gets decided")

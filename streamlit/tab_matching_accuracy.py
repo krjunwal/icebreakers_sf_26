@@ -5,7 +5,7 @@ import altair as alt
 import streamlit as st
 
 from theme import (
-    stat_card, status_for, altair_base, donut_chart, section_header, gradient_divider,
+    stat_card, status_for, altair_base, donut_chart, section_header, gradient_divider, metric_info,
     ACCURACY_THRESHOLDS, STATUS, INK_MUTED, OUTCOME_LABELS, CATEGORICAL,
 )
 
@@ -27,19 +27,55 @@ def render(session):
         stat_card("Precision", f"{row['PRECISION']:.1%}" if row["PRECISION"] is not None else "n/a",
                    sub=f"{int(row['TRUE_POSITIVES']):,} of {int(row['PREDICTED_COUNT']):,} claimed matches were correct",
                    status_label=label, status_color=color)
+        metric_info("Precision", (
+            "Of everything we confidently called a match, how many were actually correct?\n\n"
+            f"**Formula:** True positives ÷ (True positives + False positives)  \n"
+            f"= {int(row['TRUE_POSITIVES']):,} ÷ {int(row['PREDICTED_COUNT']):,} = **{row['PRECISION']:.1%}**\n\n"
+            "A high precision means you can trust a \"MATCH\" verdict -- few false alarms. A low "
+            "precision means the system is crying wolf too often, and confirmed matches would need "
+            "double-checking too."
+        ))
     with c2:
         label, color = status_for(row["RECALL"], ACCURACY_THRESHOLDS)
         stat_card("Recall", f"{row['RECALL']:.1%}" if row["RECALL"] is not None else "n/a",
                    sub=f"We found {int(row['TRUE_POSITIVES']):,} of the {int(row['GROUND_TRUTH_COUNT']):,} real matches out there",
                    status_label=label, status_color=color)
+        metric_info("Recall", (
+            "Of all the real matches that actually exist in the data, how many did we find?\n\n"
+            f"**Formula:** True positives ÷ (True positives + False negatives)  \n"
+            f"= {int(row['TRUE_POSITIVES']):,} ÷ {int(row['GROUND_TRUTH_COUNT']):,} = **{row['RECALL']:.1%}**\n\n"
+            "A high recall means we're not missing real matches. A low recall means real matches "
+            "are slipping through undetected -- that's exactly what shows up in the \"Missed "
+            "matches\" card."
+        ))
     with c3:
         label, color = status_for(row["F1_SCORE"], ACCURACY_THRESHOLDS)
         stat_card("Overall score (F1)", f"{row['F1_SCORE']:.1%}" if row["F1_SCORE"] is not None else "n/a",
                    sub="Balances the two scores above into one number",
                    status_label=label, status_color=color)
+        metric_info("F1 score", (
+            "A single number that balances Precision and Recall -- useful because a system can "
+            "score great on one while doing badly on the other (e.g. calling *everything* a match "
+            "gives 100% recall but terrible precision).\n\n"
+            f"**Formula:** 2 × (Precision × Recall) ÷ (Precision + Recall)  \n"
+            f"= 2 × ({row['PRECISION']:.1%} × {row['RECALL']:.1%}) ÷ ({row['PRECISION']:.1%} + "
+            f"{row['RECALL']:.1%}) = **{row['F1_SCORE']:.1%}**\n\n"
+            "It punishes systems that are lopsided -- great at one, bad at the other -- more than a "
+            "simple average would."
+        ))
     with c4:
         stat_card("Missed matches", f"{int(row['FALSE_NEGATIVES']):,}",
                    sub="Real matches we didn't confidently confirm", accent=CATEGORICAL["violet"])
+        metric_info("Missed matches", (
+            "Real matches (confirmed by the verified answer key) that our system did **not** "
+            "confidently label as a match -- it either scored them too low, or flagged them for "
+            "human review instead of auto-confirming.\n\n"
+            f"**Formula:** Ground-truth matches − True positives  \n"
+            f"= {int(row['GROUND_TRUTH_COUNT']):,} − {int(row['TRUE_POSITIVES']):,} = "
+            f"**{int(row['FALSE_NEGATIVES']):,}**\n\n"
+            "Every one of these is a real match a person would need to catch manually today if they "
+            "only trusted the automatic \"MATCH\" label."
+        ))
 
     st.caption(
         "💡 In plain words: when this system says **\"these are the same product,\" "

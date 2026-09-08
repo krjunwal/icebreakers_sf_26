@@ -1,12 +1,13 @@
 """
 Abt-Buy Product Matching hackathon demo -- Streamlit in Snowflake entry point.
 
-Everything lives on ONE page with tabs (Matching Accuracy / Competitive
-Pricing / Market Trends) rather than Streamlit's auto-discovered pages/
-sidebar navigation -- deliberately, so a viewer never has to click away and
-lose context. Each tab's content lives in its own module
-(tab_matching_accuracy.py, tab_competitive_pricing.py, tab_market_trends.py)
-purely for code organization; Streamlit does not treat them as separate pages.
+Everything lives on ONE page with tabs (Product Explorer / Matching Accuracy /
+Competitive Pricing / Market Trends) rather than Streamlit's auto-discovered
+pages/ sidebar navigation -- deliberately, so a viewer never has to click
+away and lose context. Each tab's content lives in its own module
+(tab_product_explorer.py, tab_matching_accuracy.py, tab_competitive_pricing.py,
+tab_market_trends.py) purely for code organization; Streamlit does not treat
+them as separate pages.
 """
 
 import streamlit as st
@@ -16,6 +17,7 @@ from theme import (
     inject_global_css, stat_card, status_for, pill_row, pipeline_flow,
     ACCURACY_THRESHOLDS, CATEGORICAL,
 )
+import tab_product_explorer
 import tab_matching_accuracy
 import tab_competitive_pricing
 import tab_market_trends
@@ -73,7 +75,12 @@ pipeline_flow([
 st.caption("Only the genuinely ambiguous cases ever reach step 4 — most pairs are resolved cheaply by steps 1-3 alone.")
 
 st.markdown("")
-tab1, tab2, tab3 = st.tabs(["🎯  Matching Accuracy", "💲  Competitive Pricing", "📈  Market Trends"])
+tab0, tab1, tab2, tab3 = st.tabs([
+    "🔎  Product Explorer", "🎯  Matching Accuracy", "💲  Competitive Pricing", "📈  Market Trends",
+])
+
+with tab0:
+    tab_product_explorer.render(session)
 
 with tab1:
     tab_matching_accuracy.render(session)

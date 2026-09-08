@@ -53,9 +53,9 @@ precision_label, precision_color = status_for(precision, ACCURACY_THRESHOLDS)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    stat_card("Confirmed matches", f"{total_matches:,}", sub="final_label = 'MATCH'")
+    stat_card("Confirmed matches", f"{total_matches:,}", sub="Same product, high confidence")
 with col2:
-    stat_card("In human-review queue", f"{review_count:,}", sub="final_label = 'REVIEW'")
+    stat_card("In human-review queue", f"{review_count:,}", sub="Uncertain — a person should double-check")
 with col3:
     stat_card("Precision", f"{precision:.1%}" if precision is not None else "n/a",
               status_label=precision_label, status_color=precision_color)

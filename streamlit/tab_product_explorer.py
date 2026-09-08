@@ -9,19 +9,25 @@ from theme import stat_card, gradient_divider, CATEGORICAL
 
 
 def _search(session, query, limit=20):
+    # LIMIT must sit inside each branch, not after the UNION ALL -- otherwise
+    # a store with enough matches on its own (e.g. Abt has 20+ "Sony" hits)
+    # fills the whole limit before the other store's rows are ever reached.
     like = f"%{query}%"
+    abt_limit = limit // 2
+    buy_limit = limit - abt_limit
     return session.sql(
         """
-        SELECT 'ABT' AS retailer, ap.id AS product_id, ap.name, ap.description, ap.price, aa.brand
-        FROM ABT_PRODUCTS ap LEFT JOIN ABT_ATTRS_FLAT aa ON aa.id = ap.id
-        WHERE ap.name ILIKE ?
+        (SELECT 'ABT' AS retailer, ap.id AS product_id, ap.name, ap.description, ap.price, aa.brand
+         FROM ABT_PRODUCTS ap LEFT JOIN ABT_ATTRS_FLAT aa ON aa.id = ap.id
+         WHERE ap.name ILIKE ?
+         LIMIT ?)
         UNION ALL
-        SELECT 'BUY' AS retailer, bp.id AS product_id, bp.name, bp.description, bp.price, ba.brand
-        FROM BUY_PRODUCTS bp LEFT JOIN BUY_ATTRS_FLAT ba ON ba.id = bp.id
-        WHERE bp.name ILIKE ?
-        LIMIT ?
+        (SELECT 'BUY' AS retailer, bp.id AS product_id, bp.name, bp.description, bp.price, ba.brand
+         FROM BUY_PRODUCTS bp LEFT JOIN BUY_ATTRS_FLAT ba ON ba.id = bp.id
+         WHERE bp.name ILIKE ?
+         LIMIT ?)
         """,
-        params=[like, like, limit],
+        params=[like, abt_limit, like, buy_limit],
     ).to_pandas()
 
 

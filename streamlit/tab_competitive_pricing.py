@@ -6,7 +6,7 @@ import altair as alt
 import streamlit as st
 
 from theme import (
-    stat_card, altair_base, donut_chart,
+    stat_card, altair_base, donut_chart, section_header, gradient_divider,
     DIVERGING_NEG, DIVERGING_POS, CATEGORICAL, CATEGORY_LABELS,
 )
 
@@ -57,13 +57,15 @@ def render(session):
 
     k1, k2, k3 = st.columns(3)
     with k1:
-        stat_card("Matched products shown", f"{matched_n:,}")
+        stat_card("Matched products shown", f"{matched_n:,}", accent=CATEGORICAL["blue"])
     with k2:
-        stat_card("Avg. price gap", f"{avg_gap:+.1f}%" if avg_gap is not None else "n/a", sub="Abt price vs Buy price")
+        stat_card("Avg. price gap", f"{avg_gap:+.1f}%" if avg_gap is not None else "n/a",
+                   sub="Abt price vs Buy price", accent=CATEGORICAL["orange"])
     with k3:
-        stat_card("We're cheaper on", f"{cheaper_pct:.0f}% of these" if cheaper_pct is not None else "n/a")
+        stat_card("We're cheaper on", f"{cheaper_pct:.0f}% of these" if cheaper_pct is not None else "n/a",
+                   accent=CATEGORICAL["aqua"])
 
-    st.divider()
+    gradient_divider()
 
     col_a, col_b = st.columns([1.4, 1])
     with col_a:
@@ -105,9 +107,9 @@ def render(session):
             donut = donut_chart(split_counts, "side", "n", list(colors.keys()), list(colors.values()), height=280)
             st.altair_chart(altair_base(donut), use_container_width=True)
 
-    st.divider()
+    gradient_divider()
 
-    st.markdown("**Largest price gaps**")
+    section_header("📋", "Largest price gaps", CATEGORICAL["orange"])
     st.dataframe(
         view[["ABT_NAME", "BUY_NAME", "BRAND", "CATEGORY_DISPLAY", "ABT_LATEST_PRICE", "BUY_LATEST_PRICE", "ABT_VS_BUY_PCT_GAP", "TREND_LABEL"]].head(25),
         use_container_width=True,
@@ -121,8 +123,8 @@ def render(session):
         },
     )
 
-    st.divider()
-    st.markdown("**Inspect one specific pair**")
+    gradient_divider()
+    section_header("🔬", "Inspect one specific pair", CATEGORICAL["violet"])
 
     options = {f"{r.ABT_NAME}  <->  {r.BUY_NAME}": (r.ABT_ID, r.BUY_ID) for r in view.itertuples()}
     if options:

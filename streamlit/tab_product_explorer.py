@@ -5,7 +5,7 @@ products (not just resolved matches)."""
 import pandas as pd
 import streamlit as st
 
-from theme import stat_card
+from theme import stat_card, gradient_divider, CATEGORICAL
 
 
 def _search(session, query, limit=20):
@@ -81,9 +81,10 @@ def render(session):
                 st.write(row["DESCRIPTION"] if pd.notna(row["DESCRIPTION"]) else "_No description available._")
             with d2:
                 if pd.notna(row["PRICE"]):
-                    stat_card("Price", f"${row['PRICE']:.2f}", sub=f"Sold on {retailer}")
+                    stat_card("Price", f"${row['PRICE']:.2f}", sub=f"Sold on {retailer}", accent=CATEGORICAL["blue"])
                 else:
-                    stat_card("Price", "Not listed", sub=f"{retailer} didn't list a price for this item")
+                    stat_card("Price", "Not listed", sub=f"{retailer} didn't list a price for this item",
+                               accent=CATEGORICAL["orange"])
 
             match = _match_info(session, retailer, product_id)
             if match:
@@ -103,7 +104,7 @@ def render(session):
             else:
                 st.caption("ℹ️ No matching product identified on the other retailer for this item.")
 
-    st.divider()
+    gradient_divider()
 
     # -----------------------------------------------------------------------
     # Side-by-side comparison

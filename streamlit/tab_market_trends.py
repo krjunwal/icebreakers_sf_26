@@ -4,7 +4,10 @@ trend line, and the Market Intelligence Agent's AI_AGG-generated narrative."""
 import altair as alt
 import streamlit as st
 
-from theme import altair_base, donut_chart, CATEGORICAL_ORDER, CATEGORY_LABELS, TREND_LABELS, DIVERGING_NEG, DIVERGING_POS
+from theme import (
+    altair_base, donut_chart, section_header, gradient_divider,
+    CATEGORICAL, CATEGORICAL_ORDER, CATEGORY_LABELS, TREND_LABELS, DIVERGING_NEG, DIVERGING_POS,
+)
 
 
 def render(session):
@@ -62,12 +65,12 @@ def render(session):
                 "the labeled ground-truth pairs, not every pair the ensemble predicted."
             )
 
-    st.divider()
+    gradient_divider()
 
     # -------------------------------------------------------------------
     # Top 5 highlights
     # -------------------------------------------------------------------
-    st.markdown("### 🏆 Top 5 highlights")
+    section_header("🏆", "Top 5 highlights", CATEGORICAL["yellow"])
     h1, h2, h3 = st.columns(3)
 
     with h1:
@@ -108,13 +111,13 @@ def render(session):
         for i, r in enumerate(top_brand_counts.itertuples(), 1):
             st.markdown(f"**{i}.** {r.BRAND}  \n:blue[{r.N} matched product(s)]")
 
-    st.divider()
+    gradient_divider()
 
     # -------------------------------------------------------------------
     # Category comparison -- diverging bar, same convention as the brand
     # chart on Competitive Pricing (blue = we're cheaper, red = pricier)
     # -------------------------------------------------------------------
-    st.markdown("**Compare categories: who's priced better, by category?**")
+    section_header("⚖️", "Compare categories: who's priced better?", CATEGORICAL["blue"])
     cat_gap = session.sql(
         "SELECT category, AVG(abt_vs_buy_pct_gap) AS avg_gap, COUNT(*) AS n FROM PRODUCT_MATCH_FACTS "
         "WHERE final_label = 'MATCH' AND abt_vs_buy_pct_gap IS NOT NULL AND category IS NOT NULL "
@@ -138,9 +141,10 @@ def render(session):
         st.altair_chart(altair_base(chart), use_container_width=True)
         st.caption("🔵 Blue = we're cheaper on average in that category  ·  🔴 Red = we're pricier")
 
-    st.divider()
+    gradient_divider()
 
-    st.markdown("**Avg. Abt price by brand over time** (top 5 brands by match volume)")
+    section_header("📈", "Avg. Abt price by brand over time", CATEGORICAL["aqua"])
+    st.caption("Top 5 brands by match volume")
     top_brands = session.sql(
         "SELECT brand, COUNT(*) AS n FROM PRODUCT_MATCH_FACTS "
         "WHERE final_label = 'MATCH' AND brand IS NOT NULL GROUP BY brand ORDER BY n DESC LIMIT 5"
@@ -176,8 +180,8 @@ def render(session):
     else:
         st.info("No brand-level price history available yet.")
 
-    st.divider()
-    st.markdown("**🤖 Ask the Market Intelligence agent for a narrative summary**")
+    gradient_divider()
+    section_header("🤖", "Ask the Market Intelligence agent for a narrative summary", CATEGORICAL["magenta"])
     st.caption("This calls a real Cortex AI_AGG function live -- it reads the underlying data and writes the summary itself.")
 
     categories = session.sql(

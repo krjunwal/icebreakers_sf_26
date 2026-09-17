@@ -26,6 +26,7 @@ USE SCHEMA PUBLIC;
 CREATE OR REPLACE PROCEDURE EXPLAIN_MATCH(P_ABT_ID NUMBER, P_BUY_ID NUMBER)
 RETURNS VARCHAR
 LANGUAGE SQL
+EXECUTE AS CALLER
 AS
 $$
 DECLARE
@@ -85,16 +86,16 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
         input_schema:
           type: object
           properties:
-            abt_id: { type: string }
-            buy_id: { type: string }
-          required: [abt_id, buy_id]
+            p_abt_id: { type: string }
+            p_buy_id: { type: string }
+          required: [p_abt_id, p_buy_id]
   tool_resources:
     MatchAnalyst:
       semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     ProductSearch: { search_service: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC", max_results: "5" }
     explain_match:
-      type: "function"
+      type: "procedure"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
       identifier: "ABT_BUY.PUBLIC.EXPLAIN_MATCH"
   $$;

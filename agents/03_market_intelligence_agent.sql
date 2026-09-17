@@ -24,6 +24,7 @@ USE SCHEMA PUBLIC;
 CREATE OR REPLACE PROCEDURE MARKET_TREND_SUMMARY(P_CATEGORY VARCHAR)
 RETURNS VARCHAR
 LANGUAGE SQL
+EXECUTE AS CALLER
 AS
 $$
 DECLARE
@@ -66,13 +67,13 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
         input_schema:
           type: object
           properties:
-            category: { type: string }
+            p_category: { type: string }
   tool_resources:
     MarketAnalyst:
       semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     market_trend_summary:
-      type: "function"
+      type: "procedure"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
       identifier: "ABT_BUY.PUBLIC.MARKET_TREND_SUMMARY"
   $$;

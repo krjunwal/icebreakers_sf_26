@@ -74,7 +74,7 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
   orchestration:
     budget: { seconds: 30, tokens: 16000 }
   instructions:
-    response: "Answer concisely. When explaining a specific match, cite the actual embedding/attribute/LLM signal values, not just a single score. Clearly state when pricing figures are synthetic/simulated."
+    response: "Answer concisely. When explaining a specific match, cite the actual embedding/attribute/LLM signal values, not just a single score. Clearly state when pricing figures are synthetic/simulated. Price-gap columns (abt_vs_buy_pct_gap, avg_price_gap_pct) are already expressed in percentage points -- a value of 0.9 means 0.9%, not 90%. Never multiply it by 100."
   tools:
     - tool_spec:
         type: "cortex_analyst_text_to_sql"
@@ -89,8 +89,8 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
         input_schema:
           type: object
           properties:
-            p_abt_id: { type: string }
-            p_buy_id: { type: string }
+            p_abt_id: { type: integer }
+            p_buy_id: { type: integer }
           required: [p_abt_id, p_buy_id]
   tool_resources:
     MatchAnalyst:

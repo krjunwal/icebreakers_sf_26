@@ -947,6 +947,9 @@ BEGIN
   LEFT JOIN MATCH_SCORES ms ON ms.abt_id = ap.id AND ms.buy_id = bp.id
   WHERE ap.id = :P_ABT_ID AND bp.id = :P_BUY_ID;
   RETURN result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 
@@ -999,9 +1002,21 @@ DECLARE
   UNDERCUT_GAP_THRESHOLD_PCT FLOAT DEFAULT 5.0;
   RAISE_GAP_THRESHOLD_PCT FLOAT DEFAULT -5.0;
   MIN_CONFIDENCE_FOR_ACTION FLOAT DEFAULT 0.70;
+  v_row_count NUMBER;
   v_gap FLOAT; v_confidence FLOAT; v_abt_price FLOAT; v_buy_price FLOAT;
   v_rule VARCHAR; v_justification VARCHAR; v_result VARCHAR;
 BEGIN
+  -- Guard against an id pair that scored well in MATCH_SCORES but never made
+  -- it into the final 1:1-resolved match set -- SELECT ... INTO on zero rows
+  -- throws a hard error otherwise, which surfaces as an opaque tool failure.
+  SELECT COUNT(*) INTO :v_row_count
+  FROM PRODUCT_MATCH_FACTS WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
+
+  IF (:v_row_count = 0) THEN
+    RETURN 'NO_MATCH_RECORD -- No resolved match exists for Abt product ' || :P_ABT_ID
+           || ' and Buy product ' || :P_BUY_ID || '.';
+  END IF;
+
   SELECT abt_vs_buy_pct_gap, final_confidence, abt_latest_price, buy_latest_price
   INTO :v_gap, :v_confidence, :v_abt_price, :v_buy_price
   FROM PRODUCT_MATCH_FACTS WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
@@ -1028,6 +1043,9 @@ BEGIN
 
   v_result := :v_rule || ' -- ' || :v_justification;
   RETURN v_result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 
@@ -1086,6 +1104,9 @@ BEGIN
   FROM PRODUCT_MATCH_FACTS
   WHERE final_label = 'MATCH' AND (:P_CATEGORY IS NULL OR category = :P_CATEGORY);
   RETURN v_result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 

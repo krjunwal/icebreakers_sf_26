@@ -41,6 +41,9 @@ BEGIN
     AND (:P_CATEGORY IS NULL OR category = :P_CATEGORY);
 
   RETURN v_result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 

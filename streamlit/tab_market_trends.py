@@ -125,16 +125,20 @@ def render(session):
     ).to_pandas()
     cat_gap["DISPLAY"] = cat_gap["CATEGORY"].map(CATEGORY_LABELS).fillna(cat_gap["CATEGORY"])
     if not cat_gap.empty:
+        # Columns come back as AVG_GAP / N, not avg_gap / n -- Snowflake
+        # folds unquoted SQL aliases to uppercase, so referencing the
+        # lowercase alias here finds no matching field and Altair silently
+        # renders an empty chart instead of erroring.
         chart = (
             alt.Chart(cat_gap)
             .mark_bar(cornerRadiusEnd=4, size=24)
             .encode(
                 y=alt.Y("DISPLAY:N", sort=None, title=None),
-                x=alt.X("avg_gap:Q", title="Avg. price gap (%)"),
-                color=alt.condition(alt.datum.avg_gap < 0, alt.value(DIVERGING_NEG), alt.value(DIVERGING_POS)),
+                x=alt.X("AVG_GAP:Q", title="Avg. price gap (%)"),
+                color=alt.condition(alt.datum.AVG_GAP < 0, alt.value(DIVERGING_NEG), alt.value(DIVERGING_POS)),
                 tooltip=[alt.Tooltip("DISPLAY:N", title="Category"),
-                         alt.Tooltip("avg_gap:Q", title="Avg gap %", format="+.1f"),
-                         alt.Tooltip("n:Q", title="Matched pairs")],
+                         alt.Tooltip("AVG_GAP:Q", title="Avg gap %", format="+.1f"),
+                         alt.Tooltip("N:Q", title="Matched pairs")],
             )
             .properties(height=32 * len(cat_gap) + 40)
         )

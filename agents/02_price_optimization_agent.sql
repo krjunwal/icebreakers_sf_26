@@ -43,6 +43,7 @@ DECLARE
   UNDERCUT_GAP_THRESHOLD_PCT FLOAT DEFAULT 5.0;   -- Abt priced >5% above Buy -> consider undercutting
   RAISE_GAP_THRESHOLD_PCT FLOAT DEFAULT -5.0;     -- Abt priced >5% below Buy -> room to raise
   MIN_CONFIDENCE_FOR_ACTION FLOAT DEFAULT 0.70;   -- below this, don't recommend a pricing action at all
+  v_row_count NUMBER;
   v_gap FLOAT;
   v_confidence FLOAT;
   v_abt_price FLOAT;
@@ -51,6 +52,20 @@ DECLARE
   v_justification VARCHAR;
   v_result VARCHAR;
 BEGIN
+  -- An agent (or any caller) can supply an id pair that scored well in
+  -- MATCH_SCORES but never made it into the final 1:1-resolved match set --
+  -- SELECT ... INTO on zero rows throws a hard runtime error, which then
+  -- surfaces to the end user as an opaque "tool unavailable" message. Guard
+  -- against it explicitly with a friendly result instead.
+  SELECT COUNT(*) INTO :v_row_count
+  FROM PRODUCT_MATCH_FACTS
+  WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
+
+  IF (:v_row_count = 0) THEN
+    RETURN 'NO_MATCH_RECORD -- No resolved match exists for Abt product ' || :P_ABT_ID
+           || ' and Buy product ' || :P_BUY_ID || '.';
+  END IF;
+
   SELECT abt_vs_buy_pct_gap, final_confidence, abt_latest_price, buy_latest_price
   INTO :v_gap, :v_confidence, :v_abt_price, :v_buy_price
   FROM PRODUCT_MATCH_FACTS
@@ -79,6 +94,9 @@ BEGIN
 
   v_result := :v_rule || ' -- ' || :v_justification;
   RETURN v_result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 

@@ -50,6 +50,9 @@ BEGIN
   WHERE ap.id = :P_ABT_ID AND bp.id = :P_BUY_ID;
 
   RETURN result;
+EXCEPTION
+  WHEN OTHER THEN
+    RETURN 'ERROR -- ' || SQLERRM;
 END;
 $$;
 

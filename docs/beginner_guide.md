@@ -923,7 +923,7 @@ Run each block below. Each one: (1) creates a supporting stored procedure, (2) s
 USE ROLE ABT_BUY_ROLE; USE WAREHOUSE ABT_BUY_WH; USE DATABASE ABT_BUY; USE SCHEMA PUBLIC;
 
 CREATE OR REPLACE PROCEDURE EXPLAIN_MATCH(P_ABT_ID NUMBER, P_BUY_ID NUMBER)
-RETURNS VARCHAR LANGUAGE SQL AS
+RETURNS VARCHAR LANGUAGE SQL EXECUTE AS CALLER AS
 $$
 DECLARE
   result VARCHAR;
@@ -973,15 +973,15 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
         description: "Given an Abt product id and a Buy product id, returns a live explanation of whether/why they are judged to be the same product."
         input_schema:
           type: object
-          properties: { abt_id: { type: string }, buy_id: { type: string } }
-          required: [abt_id, buy_id]
+          properties: { p_abt_id: { type: string }, p_buy_id: { type: string } }
+          required: [p_abt_id, p_buy_id]
   tool_resources:
     MatchAnalyst:
       semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     ProductSearch: { search_service: "ABT_BUY.PUBLIC.PRODUCT_SEARCH_SVC", max_results: "5" }
     explain_match:
-      type: "function"
+      type: "procedure"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
       identifier: "ABT_BUY.PUBLIC.EXPLAIN_MATCH"
   $$;
@@ -993,7 +993,7 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
 USE ROLE ABT_BUY_ROLE; USE WAREHOUSE ABT_BUY_WH; USE DATABASE ABT_BUY; USE SCHEMA PUBLIC;
 
 CREATE OR REPLACE PROCEDURE RECOMMEND_PRICE(P_ABT_ID NUMBER, P_BUY_ID NUMBER)
-RETURNS VARCHAR LANGUAGE SQL AS
+RETURNS VARCHAR LANGUAGE SQL EXECUTE AS CALLER AS
 $$
 DECLARE
   UNDERCUT_GAP_THRESHOLD_PCT FLOAT DEFAULT 5.0;
@@ -1053,14 +1053,14 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
         description: "Given an Abt product id and a Buy product id that are a resolved match, returns a rule-based pricing recommendation with a short justification."
         input_schema:
           type: object
-          properties: { abt_id: { type: string }, buy_id: { type: string } }
-          required: [abt_id, buy_id]
+          properties: { p_abt_id: { type: string }, p_buy_id: { type: string } }
+          required: [p_abt_id, p_buy_id]
   tool_resources:
     PricingAnalyst:
       semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     recommend_price:
-      type: "function"
+      type: "procedure"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
       identifier: "ABT_BUY.PUBLIC.RECOMMEND_PRICE"
   $$;
@@ -1072,7 +1072,7 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
 USE ROLE ABT_BUY_ROLE; USE WAREHOUSE ABT_BUY_WH; USE DATABASE ABT_BUY; USE SCHEMA PUBLIC;
 
 CREATE OR REPLACE PROCEDURE MARKET_TREND_SUMMARY(P_CATEGORY VARCHAR)
-RETURNS VARCHAR LANGUAGE SQL AS
+RETURNS VARCHAR LANGUAGE SQL EXECUTE AS CALLER AS
 $$
 DECLARE
   v_result VARCHAR;
@@ -1108,13 +1108,13 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
         description: "Returns a natural-language summary of competitive pricing trends, optionally filtered to one product category."
         input_schema:
           type: object
-          properties: { category: { type: string } }
+          properties: { p_category: { type: string } }
   tool_resources:
     MarketAnalyst:
       semantic_view: "ABT_BUY.PUBLIC.ABT_BUY_SEMANTIC_VIEW"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
     market_trend_summary:
-      type: "function"
+      type: "procedure"
       execution_environment: { type: "warehouse", warehouse: "ABT_BUY_WH" }
       identifier: "ABT_BUY.PUBLIC.MARKET_TREND_SUMMARY"
   $$;

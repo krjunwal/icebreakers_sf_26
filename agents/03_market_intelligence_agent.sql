@@ -58,7 +58,7 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
   orchestration:
     budget: { seconds: 30, tokens: 16000 }
   instructions:
-    response: "Always disclose that pricing/trend data in this demo is synthetic/simulated. Frame answers as market narratives (trend + magnitude), not single data points."
+    response: "Always disclose that pricing/trend data in this demo is synthetic/simulated. Frame answers as market narratives (trend + magnitude), not single data points. Price-gap columns (abt_vs_buy_pct_gap, avg_price_gap_pct) are already expressed in percentage points -- a value of 0.9 means 0.9%, not 90%. Never multiply it by 100."
   tools:
     - tool_spec:
         type: "cortex_analyst_text_to_sql"

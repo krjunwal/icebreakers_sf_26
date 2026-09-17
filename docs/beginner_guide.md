@@ -966,7 +966,7 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
   orchestration:
     budget: { seconds: 30, tokens: 16000 }
   instructions:
-    response: "Answer concisely. When explaining a specific match, cite the actual embedding/attribute/LLM signal values, not just a single score. Clearly state when pricing figures are synthetic/simulated."
+    response: "Answer concisely. When explaining a specific match, cite the actual embedding/attribute/LLM signal values, not just a single score. Clearly state when pricing figures are synthetic/simulated. Price-gap columns (abt_vs_buy_pct_gap, avg_price_gap_pct) are already expressed in percentage points -- a value of 0.9 means 0.9%, not 90%. Never multiply it by 100."
   tools:
     - tool_spec: { type: "cortex_analyst_text_to_sql", name: "MatchAnalyst" }
     - tool_spec: { type: "cortex_search", name: "ProductSearch" }
@@ -976,7 +976,7 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
         description: "Given an Abt product id and a Buy product id, returns a live explanation of whether/why they are judged to be the same product."
         input_schema:
           type: object
-          properties: { p_abt_id: { type: string }, p_buy_id: { type: string } }
+          properties: { p_abt_id: { type: integer }, p_buy_id: { type: integer } }
           required: [p_abt_id, p_buy_id]
   tool_resources:
     MatchAnalyst:
@@ -1062,7 +1062,7 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
   orchestration:
     budget: { seconds: 30, tokens: 16000 }
   instructions:
-    response: "Always disclose that pricing/price-history data in this demo is synthetic/simulated. State the rule-engine decision plainly before any narrative."
+    response: "Always disclose that pricing/price-history data in this demo is synthetic/simulated. State the rule-engine decision plainly before any narrative. Price-gap columns (abt_vs_buy_pct_gap, avg_price_gap_pct) are already expressed in percentage points -- a value of 0.9 means 0.9%, not 90%. Never multiply it by 100."
   tools:
     - tool_spec: { type: "cortex_analyst_text_to_sql", name: "PricingAnalyst" }
     - tool_spec:
@@ -1071,7 +1071,7 @@ CREATE OR REPLACE AGENT PRICE_OPTIMIZATION_AGENT
         description: "Given an Abt product id and a Buy product id that are a resolved match, returns a rule-based pricing recommendation with a short justification."
         input_schema:
           type: object
-          properties: { p_abt_id: { type: string }, p_buy_id: { type: string } }
+          properties: { p_abt_id: { type: integer }, p_buy_id: { type: integer } }
           required: [p_abt_id, p_buy_id]
   tool_resources:
     PricingAnalyst:
@@ -1120,7 +1120,7 @@ CREATE OR REPLACE AGENT MARKET_INTELLIGENCE_AGENT
   orchestration:
     budget: { seconds: 30, tokens: 16000 }
   instructions:
-    response: "Always disclose that pricing/trend data in this demo is synthetic/simulated. Frame answers as market narratives, not single data points."
+    response: "Always disclose that pricing/trend data in this demo is synthetic/simulated. Frame answers as market narratives, not single data points. Price-gap columns (abt_vs_buy_pct_gap, avg_price_gap_pct) are already expressed in percentage points -- a value of 0.9 means 0.9%, not 90%. Never multiply it by 100."
   tools:
     - tool_spec: { type: "cortex_analyst_text_to_sql", name: "MarketAnalyst" }
     - tool_spec:

@@ -36,7 +36,8 @@ BEGIN
     'Summarize the overall competitive pricing trend across these matched product pairs in 2-3 sentences: is one retailer generally cheaper, are prices volatile, any notable undercutting pattern? Mention that pricing data is simulated for this demo.'
   )
   INTO :v_result
-  FROM PRODUCT_MATCH_FACTS
+  -- Fully qualified -- see the note in 02_price_optimization_agent.sql.
+  FROM ABT_BUY.PUBLIC.PRODUCT_MATCH_FACTS
   WHERE final_label = 'MATCH'
     AND (:P_CATEGORY IS NULL OR category = :P_CATEGORY);
 

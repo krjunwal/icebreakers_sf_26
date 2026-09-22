@@ -57,8 +57,14 @@ BEGIN
   -- SELECT ... INTO on zero rows throws a hard runtime error, which then
   -- surfaces to the end user as an opaque "tool unavailable" message. Guard
   -- against it explicitly with a friendly result instead.
+  -- Fully qualified -- an unqualified table name here resolves against
+  -- whatever database/schema happens to be active in the CALLING session,
+  -- which is fine from a worksheet (ABT_BUY.PUBLIC already active) but not
+  -- guaranteed when a Cortex Agent's own execution session calls this
+  -- procedure as a tool, causing "does not exist or not authorized" even
+  -- though the table is real and the caller has access to it.
   SELECT COUNT(*) INTO :v_row_count
-  FROM PRODUCT_MATCH_FACTS
+  FROM ABT_BUY.PUBLIC.PRODUCT_MATCH_FACTS
   WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
 
   IF (:v_row_count = 0) THEN
@@ -68,7 +74,7 @@ BEGIN
 
   SELECT abt_vs_buy_pct_gap, final_confidence, abt_latest_price, buy_latest_price
   INTO :v_gap, :v_confidence, :v_abt_price, :v_buy_price
-  FROM PRODUCT_MATCH_FACTS
+  FROM ABT_BUY.PUBLIC.PRODUCT_MATCH_FACTS
   WHERE abt_id = :P_ABT_ID AND buy_id = :P_BUY_ID;
 
   IF (:v_confidence IS NULL OR :v_confidence < :MIN_CONFIDENCE_FOR_ACTION) THEN

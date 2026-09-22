@@ -44,9 +44,13 @@ BEGIN
               || '.\nIn 2-3 plain-language sentences for a business user, explain why these two listings were judged to be the same product or not, referencing the specific signals above.'
   )
   INTO :result
-  FROM ABT_PRODUCTS ap
-  CROSS JOIN BUY_PRODUCTS bp
-  LEFT JOIN MATCH_SCORES ms ON ms.abt_id = ap.id AND ms.buy_id = bp.id
+  -- Fully qualified -- see the note in 02_price_optimization_agent.sql on
+  -- why an unqualified table name fails when a Cortex Agent's own execution
+  -- session invokes this procedure, even though it works fine from a
+  -- worksheet with ABT_BUY.PUBLIC already active.
+  FROM ABT_BUY.PUBLIC.ABT_PRODUCTS ap
+  CROSS JOIN ABT_BUY.PUBLIC.BUY_PRODUCTS bp
+  LEFT JOIN ABT_BUY.PUBLIC.MATCH_SCORES ms ON ms.abt_id = ap.id AND ms.buy_id = bp.id
   WHERE ap.id = :P_ABT_ID AND bp.id = :P_BUY_ID;
 
   RETURN result;

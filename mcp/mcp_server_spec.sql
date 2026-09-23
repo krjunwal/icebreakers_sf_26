@@ -48,8 +48,8 @@ CREATE OR REPLACE MCP SERVER ABT_BUY_MCP_SERVER
 -- After creation, the server is reachable at:
 --   https://<account_url>/api/v2/databases/ABT_BUY/schemas/PUBLIC/mcp-servers/ABT_BUY_MCP_SERVER
 -- Auth: Snowflake OAuth (default) or a Programmatic Access Token for
--- scripted/CI use. See docs/runbook.md for how to point Claude Desktop (or
--- any other MCP client) at this endpoint for the demo video.
+-- scripted/CI use. Any MCP-compatible client (e.g. Claude Desktop) can be
+-- pointed at this endpoint using either auth method above.
 
 SHOW MCP SERVERS LIKE 'ABT_BUY_MCP_SERVER';
 DESCRIBE MCP SERVER ABT_BUY_MCP_SERVER;

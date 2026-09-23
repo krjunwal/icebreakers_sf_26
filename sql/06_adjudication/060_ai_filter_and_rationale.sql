@@ -36,8 +36,9 @@ USE SCHEMA PUBLIC;
 -- ground truth; 0.50/0.90 was the best tradeoff: only 13/1097 (1.2%) true
 -- matches lost to auto-reject, 98.4% precision in auto-accept (3 FP of
 -- 190), and GRAY_ZONE cut from 70,000 to ~20,400 (71% reduction in AI
--- calls needed). See docs/hackathon_strategy.md or conversation history
--- for the full calibration query if you need to re-verify on new data.
+-- calls needed). Re-run this same threshold sweep against
+-- CANDIDATE_PAIRS_ATTR joined to ground truth if you need to re-verify on
+-- new data.
 SET AUTO_ACCEPT_THRESHOLD = 0.90;
 SET AUTO_REJECT_THRESHOLD = 0.50;
 

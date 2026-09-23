@@ -53,8 +53,8 @@ GROUP BY abt_id, buy_id, retailer;
 
 -- ---------------------------------------------------------------------------
 -- AI_CLASSIFY-derived trend label per pair (used by the Market Intelligence
--- agent -- this is the "unique AI_* fn" that differentiates it from the
--- other two agents, per docs/checkbox_matrix.md).
+-- agent -- this is the AI SQL function that differentiates it from the
+-- other two agents).
 --
 -- Deliberately a TABLE, not a VIEW: AI_CLASSIFY is a model call, and a view
 -- would re-run it for all ~1097 pairs on every single SELECT against it

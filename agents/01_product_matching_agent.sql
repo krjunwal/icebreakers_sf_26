@@ -108,8 +108,8 @@ CREATE OR REPLACE AGENT PRODUCT_MATCHING_AGENT
   $$;
 
 -- Ad hoc test run (SQL path). If this account has Snowflake Intelligence/
--- CoWork set up (see docs/runbook.md), this agent should also be selectable
--- for that platform flag via the Snowsight "AI & ML > Agents" wizard.
+-- CoWork set up, this agent should also be selectable for that platform
+-- flag via the Snowsight "AI & ML > Agents" wizard.
 SELECT SNOWFLAKE.CORTEX.AGENT_RUN(
   $${"messages":[{"role":"user","content":[{"type":"text","text":"How many products have we matched so far, and what is our current precision/recall?"}]}],
      "models":{"orchestration":"claude-4-sonnet"}}$$,

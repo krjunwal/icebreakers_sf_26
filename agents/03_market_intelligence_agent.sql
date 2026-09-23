@@ -10,8 +10,8 @@
 -- This agent's distinguishing techniques (AI_AGG, AI_CLASSIFY-derived
 -- dimensions) are deliberately different from Product Matching's
 -- AI_EXTRACT/AI_FILTER/AI_COMPLETE and Price Optimization's rule engine --
--- see docs/checkbox_matrix.md for how this spreads AI SQL function
--- coverage across all three agents instead of stacking it in one.
+-- this deliberately spreads AI SQL function coverage across all three
+-- agents instead of stacking it in one.
 --
 -- DOC-VERIFY: CREATE AGENT spec syntax, per 01_product_matching_agent.sql.
 -- ============================================================================

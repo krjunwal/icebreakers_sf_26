@@ -1,2 +1,3 @@
-pandas>=2.0
-numpy>=1.24
+# python/generate_price_history.py and python/eval_matching_local.py use only
+# the Python standard library (csv, random, re, collections, pathlib,
+# datetime) -- nothing to install here.

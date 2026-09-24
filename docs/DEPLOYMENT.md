@@ -40,13 +40,13 @@ Step-by-step instructions to deploy this solution end-to-end on a Snowflake acco
 ## Phase 6 — Semantic Layer, Agents & MCP
 
 15. Run `semantic_model/products_pricing_semantic_view.sql`.
-16. Run `agents/01_product_matching_agent.sql`, `agents/02_price_optimization_agent.sql`, and `agents/03_market_intelligence_agent.sql`. Each file creates and smoke-tests its own stored procedure before creating the agent.
+16. Run `agents/01_product_matching_agent.sql`, `agents/02_price_optimization_agent.sql`, and `agents/03_market_intelligence_agent.sql`. Each file creates and smoke-tests its own stored procedure before creating the agent. For the agents to also appear in the Snowflake Intelligence / CoWork chat UI (not just via direct agent calls), ACCOUNTADMIN must additionally run the commented-out `SNOWFLAKE_INTELLIGENCE_ADMIN` block near the bottom of `sql/00_setup/002_grant_cortex_privileges.sql` once per account — this is a one-time account setup step, not part of the pipeline itself.
 17. Run `mcp/mcp_server_spec.sql`. Verify with `SHOW MCP SERVERS;` and `DESCRIBE MCP SERVER ABT_BUY_MCP_SERVER;`.
 
 ## Phase 7 — Application Deployment
 
-18. Create a Git API integration and Git repository object pointing at this repository, then deploy the Streamlit app from it: `CREATE STREAMLIT ... ROOT_LOCATION = '@<stage>/branches/main/streamlit'`, main file `streamlit_app.py`.
-19. Open the app and confirm all 5 tabs (Product Explorer, Matching Accuracy, Competitive Pricing, Market Trends, Ask Anything) load and query without error.
+18. Run `sql/00_setup/004_git_integration_and_streamlit.sql`. The first block (API integration) must run as ACCOUNTADMIN; the rest runs as `ABT_BUY_ROLE`. This pulls the dashboard directly from GitHub (the repo is public, no credentials needed) and creates the `ABT_BUY_DASHBOARD` Streamlit app.
+19. Open the app in Snowsight (Streamlit Apps → `ABT_BUY_DASHBOARD`) and confirm all 5 tabs (Product Explorer, Matching Accuracy, Competitive Pricing, Market Trends, Ask Anything) load and query without error.
 
 ## Verification Summary
 

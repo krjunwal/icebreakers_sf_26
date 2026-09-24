@@ -2,7 +2,7 @@
 
 Snowflake hackathon submission: an AI entity-resolution pipeline that matches products across two independent retailer catalogs (the Abt-Buy benchmark) using a **multi-strategy ensemble** — blocking, semantic embeddings, structured-attribute extraction, and cost-gated LLM adjudication — combined into one explainable score + rationale per pair, plus competitive pricing analysis on top.
 
-See [`docs/architecture.md`](docs/architecture.md) (also available as [`docs/architecture.pdf`](docs/architecture.pdf)) for the full design writeup, measured results, and disclosure notes.
+See [`docs/architecture.md`](docs/architecture.md) (also available as [`docs/architecture.pdf`](docs/architecture.pdf)) for the full design writeup, measured results, and disclosure notes. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for step-by-step instructions to redeploy this solution end-to-end on a fresh Snowflake account.
 
 ## Repo layout
 
@@ -15,14 +15,14 @@ agents/              3 Cortex Agent specs (product matching / price optimization
 mcp/                 managed Snowflake MCP Server spec
 python/              local data prep: price-history generator, offline blocking-recall validator
 streamlit/           Streamlit-in-Snowflake dashboard -- Product Explorer, Matching Accuracy, Competitive Pricing, Market Trends, and a natural-language Ask Anything tab
-docs/                architecture.md, architecture.pdf
+docs/                architecture.md, architecture.pdf, DEPLOYMENT.md
 ```
 
 ## Quick start
 
 1. Run `python python/eval_matching_local.py` to see the blocking design validated locally (100% recall vs. ground truth, ~79K candidate pairs out of ~1.18M possible) — no Snowflake account needed for this step.
 2. Run `python python/generate_price_history.py` to produce the synthetic pricing dataset.
-3. The full Snowflake deployment (raw load through the matching pipeline, semantic view, search service, 3 Cortex Agents, MCP server, and Streamlit dashboard) is described in [`docs/architecture.md`](docs/architecture.md).
+3. Follow [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) to deploy everything else (raw load through the matching pipeline, semantic view, search service, 3 Cortex Agents, MCP server, and Streamlit dashboard) end-to-end on a Snowflake account.
 
 ## Data source & synthetic data disclosure
 

@@ -61,6 +61,22 @@ Abt.csv, Buy.csv, ground truth ──▶ raw tables ──▶ price cleanup + br
 
 All three sit on one semantic view (`ABT_BUY_SEMANTIC_VIEW`) so the same objects back the Cortex Agents, the Snowflake Intelligence/CoWork chat surface, the Streamlit dashboards, and the MCP server — no duplicated build effort.
 
+## Snowflake Integration
+
+Every layer of this system runs natively inside Snowflake — nothing is hosted externally:
+
+| Snowflake capability | How it's used here |
+|---|---|
+| **Cortex AI SQL functions** | `AI_EMBED`, `AI_EXTRACT`, `AI_FILTER`, `AI_COMPLETE`, `AI_AGG`, `AI_CLASSIFY` — the entire matching, adjudication, and narrative-generation pipeline |
+| **Cortex Search** | `PRODUCT_SEARCH_SVC` — hybrid vector + keyword search across both catalogs, powering the Product Explorer's universal lookup |
+| **Cortex Analyst / Semantic View** | `ABT_BUY_SEMANTIC_VIEW` — a single governed semantic layer over matches, pricing, and accuracy, reused by every agent, dashboard tab, and the MCP server |
+| **Cortex Agents** | 3 agents (`PRODUCT_MATCHING_AGENT`, `PRICE_OPTIMIZATION_AGENT`, `MARKET_INTELLIGENCE_AGENT`), each combining Cortex Analyst, and for two of them, a custom stored-procedure tool |
+| **Snowflake Intelligence (CoWork)** | All 3 agents are surfaced as conversational chat agents directly in Snowsight, no external chat UI required |
+| **Managed MCP Server** | `ABT_BUY_MCP_SERVER` exposes the semantic view, search service, and read-only SQL execution as standard MCP tools, so any MCP-compatible client (Claude Desktop, etc.) can query this data directly |
+| **Streamlit-in-Snowflake** | The entire dashboard runs as a native Snowflake object, deployed from this GitHub repository via Snowflake's Git integration — no separate hosting |
+| **Python stored procedures** | `GREEDY_1TO1_RESOLVE` (conflict resolution) runs as a Snowpark Python stored procedure, inside the same warehouse as the SQL pipeline |
+| **Git integration** | The Streamlit app and this repository's SQL are deployed directly from GitHub via a Snowflake `GIT REPOSITORY` object — see `docs/DEPLOYMENT.md` for the full redeploy procedure on a fresh account |
+
 ## ⚠️ Synthetic Data Disclosure
 
 **The Abt-Buy dataset contains no time-series pricing history** — only a single point-in-time price per product, missing on 46–62% of rows. Since the hackathon brief calls for pricing-history analysis, `python/generate_price_history.py` fabricates an 8–12-week weekly price series per matched pair per retailer: base price from the real observed price where available (else bootstrapped from the ~1,000 known real prices in the dataset), plus a random-walk drift and occasional larger promo/undercut events. Every row is tagged `is_synthetic = TRUE` in the database schema itself, carried through every downstream view, and shown as a persistent warning banner in the Streamlit pricing/trends pages. **Product identities and matches are computed entirely from the real dataset; only the price *history* is simulated.**

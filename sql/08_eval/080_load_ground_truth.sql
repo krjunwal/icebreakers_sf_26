@@ -5,7 +5,7 @@
 -- eval-appropriate name/shape. EVAL-ONLY: nothing in the matching pipeline
 -- (03-07) reads from this table -- it exists purely to score the pipeline's
 -- output after the fact. Keeping that boundary intact is a methodology-
--- integrity point worth stating explicitly in architecture.md.
+-- integrity point worth keeping in mind when reading the pipeline.
 -- ============================================================================
 
 USE ROLE ABT_BUY_ROLE;

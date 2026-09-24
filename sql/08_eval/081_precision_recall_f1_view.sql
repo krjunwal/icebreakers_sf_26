@@ -2,7 +2,7 @@
 -- 081_precision_recall_f1_view.sql
 -- The quantitative proof the matcher works. Feeds the Streamlit "Matching
 -- Accuracy" page, the semantic view (so agents can answer "what's our
--- current matching accuracy"), and the demo video / architecture.md.
+-- current matching accuracy"), and the demo video.
 --
 -- Precision/recall are computed strictly on final_label = 'MATCH' (the
 -- confident tier). REVIEW-labeled pairs are deliberately excluded from this

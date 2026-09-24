@@ -1,7 +1,6 @@
 """
 Fast local sanity check of the blocking + brand-matching design, run entirely
-against the raw CSVs -- no Snowflake needed. This is the script referenced in
-docs/architecture.md's "Results" section: it
+against the raw CSVs -- no Snowflake needed. It
 simulates the exact logic in sql/02_prep/020_clean_price_and_brand_lookup.sql
 and sql/03_blocking/030_candidate_pairs.sql in plain Python, so blocking
 recall can be validated *before* spending any Snowflake AI budget.

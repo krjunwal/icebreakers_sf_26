@@ -55,7 +55,7 @@ Step-by-step instructions to deploy this solution end-to-end on a Snowflake acco
 | Blocking recall | ≥95% (100% measured on this dataset) |
 | Candidate pairs generated | ~79K–81K out of ~1.18M possible pairs |
 | Final duplicate check (Phase 4, step 10) | 0 rows |
-| Matching precision / recall / F1 | See `docs/architecture.md` — Results section |
+| Matching precision / recall / F1 | Query `V_MATCHING_ACCURACY` — expect ~97.9% / 86.6% / 0.919 |
 | All 3 Cortex Agents | Respond correctly; visible in Snowflake Intelligence / CoWork |
 | MCP server | Lists 3 tools via `DESCRIBE MCP SERVER` |
 | Streamlit app | All 5 tabs load without error |

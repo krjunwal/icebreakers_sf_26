@@ -14,7 +14,7 @@
 -- the one-sentence explanation a human reads.
 --
 -- Remember: all prices/gaps here come from PRICE_HISTORY, which is
--- SYNTHETIC (see python/generate_price_history.py + architecture.md). The
+-- SYNTHETIC (see python/generate_price_history.py). The
 -- agent's instructions below make it say so.
 --
 -- DOC-VERIFY: CREATE AGENT spec syntax, per 01_product_matching_agent.sql.

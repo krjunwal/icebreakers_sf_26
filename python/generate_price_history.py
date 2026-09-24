@@ -9,9 +9,8 @@ data at all -- just a single point-in-time price per product (and even that
 is missing on ~46-61% of rows). The hackathon brief calls for "Pricing
 History Data" as an input, so this script fabricates a plausible one. Every
 row this script produces is tagged is_synthetic=True all the way through the
-pipeline (see sql/09_pricing/090_load_synthetic_price_history.sql) and
-architecture.md has an explicit disclosure section -- this is demo data,
-not a claim about real historical prices.
+pipeline (see sql/09_pricing/090_load_synthetic_price_history.sql) -- this is
+demo data, not a claim about real historical prices.
 
 Method (deliberately simple -- no category modeling, no external
 time-series library):

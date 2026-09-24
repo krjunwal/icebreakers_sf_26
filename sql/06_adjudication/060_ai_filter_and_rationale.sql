@@ -6,7 +6,7 @@
 -- budget -- and within that band, a cheap AI_FILTER gate (fast model) runs
 -- before the pricier AI_COMPLETE structured call, so only pairs that pass
 -- the gate get a full rationale. This is a deliberate cost/latency design
--- decision, not an afterthought -- call this out in architecture.md.
+-- decision, not an afterthought.
 --
 -- DOC-VERIFY: AI_FILTER model selection (this pipeline assumes it uses a
 -- fast default model with no explicit model= param, per the function's

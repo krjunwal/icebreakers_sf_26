@@ -2,7 +2,7 @@
 
 Snowflake hackathon submission: an AI entity-resolution pipeline that matches products across two independent retailer catalogs (the Abt-Buy benchmark) using a **multi-strategy ensemble** — blocking, semantic embeddings, structured-attribute extraction, and cost-gated LLM adjudication — combined into one explainable score + rationale per pair, plus competitive pricing analysis on top.
 
-See [`docs/architecture.md`](docs/architecture.md) (also available as [`docs/architecture.pdf`](docs/architecture.pdf)) for the full design writeup, measured results, and disclosure notes. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for step-by-step instructions to redeploy this solution end-to-end on a fresh Snowflake account.
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for step-by-step instructions to redeploy this solution end-to-end on a fresh Snowflake account.
 
 ## Repo layout
 
@@ -15,7 +15,7 @@ agents/              3 Cortex Agent specs (product matching / price optimization
 mcp/                 managed Snowflake MCP Server spec
 python/              local data prep: price-history generator, offline blocking-recall validator
 streamlit/           Streamlit-in-Snowflake dashboard -- Product Explorer, Matching Accuracy, Competitive Pricing, Market Trends, and a natural-language Ask Anything tab
-docs/                architecture.md, architecture.pdf, DEPLOYMENT.md
+docs/                DEPLOYMENT.md
 ```
 
 ## Quick start
@@ -26,4 +26,4 @@ docs/                architecture.md, architecture.pdf, DEPLOYMENT.md
 
 ## Data source & synthetic data disclosure
 
-Dataset: Abt-Buy benchmark (Kopcke, Thor, Rahm — University of Leipzig), used here under its standard research/benchmark terms. **Pricing history is synthetic** — the source dataset has no time-series pricing; see the disclosure section in `docs/architecture.md` for the generation method. Product matching itself is computed entirely from the real dataset.
+Dataset: Abt-Buy benchmark (Kopcke, Thor, Rahm — University of Leipzig), used here under its standard research/benchmark terms. **Pricing history is synthetic** — the source dataset has no time-series pricing, so `python/generate_price_history.py` fabricates a weekly price series per matched pair; every row is tagged `is_synthetic = TRUE`. Product matching itself is computed entirely from the real dataset.

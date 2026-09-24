@@ -2,7 +2,7 @@
 Shared visual design system for the dashboard -- validated categorical/status/
 diverging palette (colorblind-safe, contrast-checked), plus small helpers for
 stat cards and Altair chart styling. Light-mode only (a deliberate scope cut
-for the hackathon timeline -- see architecture.md).
+for the hackathon timeline).
 
 Palette source: internal data-viz design system reference (categorical hue
 order + status/diverging pairs are chosen so adjacent colors stay
